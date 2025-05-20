@@ -1,9 +1,9 @@
 import { IncomingMessage, ServerResponse } from "http";
-import { Route, Context, Middleware } from "../types/http";
+import { Route, Context, Middleware, Handler, HTTPMethod } from "../types/http";
 import { runMiddlewares } from "./middleware";
-import { routes } from "../routes";
 
 const globalMiddlewares: Middleware[] = [];
+const routes: Route[] = [];
 
 export const use = (middleware: Middleware) => {
   globalMiddlewares.push(middleware);
@@ -54,20 +54,22 @@ function matchRoute(
 /**
  * The router interface.
  */
-export const router = {
+export const router: {
+  handle: (req: IncomingMessage, res: ServerResponse) => void;
+  routes: Route[];
+  [method: string]: any;
+} = {
+  routes,
+
   handle(req: IncomingMessage, res: ServerResponse) {
     const match = matchRoute(req.method || "", req.url || "");
 
     if (!match) {
-      // No matching route — send 404
-      res.writeHead(404, {
-        "Content-Type": "text/plain",
-      });
+      res.writeHead(404, { "Content-Type": "text/plain" });
       res.end("Not Found");
       return;
     }
 
-    // Context object to pass to handler (req, res, and params)
     const ctx: Context = {
       req,
       res,
@@ -80,3 +82,30 @@ export const router = {
     runMiddlewares(ctx, allMiddlewares, match.route.handler);
   },
 };
+
+const methods: HTTPMethod[] = [
+  "GET",
+  "POST",
+  "PUT",
+  "DELETE",
+  "PATCH",
+  "OPTIONS",
+  "HEAD",
+];
+
+methods.forEach((method) => {
+  router[method.toLowerCase()] = (
+    path: string,
+    ...handlers: (Middleware | Handler)[]
+  ) => {
+    const handler = handlers.pop() as Handler;
+    const middlewares = handlers as Middleware[];
+
+    routes.push({
+      method,
+      path,
+      handler,
+      middlewares,
+    });
+  };
+});

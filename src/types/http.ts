@@ -17,6 +17,10 @@ export interface Context {
   res: ServerResponse;
   params: RouteParams;
   body?: any;
+
+  // Helpers
+  status?: (code: number) => Context;
+  json?: (data: unknown) => void;
 }
 
 /**
@@ -44,3 +48,12 @@ export interface Route {
   handler: Handler;
   middlewares?: Middleware[];
 }
+
+export type HTTPMethod =
+  | "GET"
+  | "POST"
+  | "PUT"
+  | "DELETE"
+  | "PATCH"
+  | "OPTIONS"
+  | "HEAD";

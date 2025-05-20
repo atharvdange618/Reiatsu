@@ -18,36 +18,45 @@ function matchRoute(
   url: string
 ): { route: Route; params: Record<string, string> } | null {
   for (const route of routes) {
-    // Check if HTTP method matches (GET, POST, etc.)
     if (route.method !== method) continue;
 
-    // Split route path and incoming URL into parts (e.g., "/user/:id" → ['user', ':id'])
     const routeParts = route.path.split("/").filter(Boolean);
     const urlParts = url.split("/").filter(Boolean);
-
-    // If number of segments don't match, skip this route
-    if (routeParts.length !== urlParts.length) continue;
 
     const params: Record<string, string> = {};
 
     let matched = true;
-
     for (let i = 0; i < routeParts.length; i++) {
-      if (routeParts[i].startsWith(":")) {
-        // It's a param like ":id" → capture it
-        const key = routeParts[i].slice(1);
-        params[key] = urlParts[i];
-      } else if (routeParts[i] !== urlParts[i]) {
-        // It's a hardcoded segment and doesn't match → break
+      const routePart = routeParts[i];
+      const urlPart = urlParts[i];
+
+      if (routePart === "*") {
+        // Match all remaining parts
+        break;
+      }
+
+      if (!urlPart) {
+        matched = false;
+        break;
+      }
+
+      if (routePart.startsWith(":")) {
+        const key = routePart.slice(1);
+        params[key] = urlPart;
+      } else if (routePart !== urlPart) {
         matched = false;
         break;
       }
     }
 
-    if (matched) return { route, params };
+    if (
+      matched &&
+      (routeParts.includes("*") || routeParts.length === urlParts.length)
+    ) {
+      return { route, params };
+    }
   }
 
-  // No route matched
   return null;
 }
 

@@ -1,0 +1,11 @@
+meta {
+  name: Test for serving static files
+  type: http
+  seq: 10
+}
+
+get {
+  url: http://localhost:3000/static/index.html
+  body: none
+  auth: inherit
+}

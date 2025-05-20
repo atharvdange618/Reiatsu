@@ -9,20 +9,15 @@ HTTP servers in Node.js without external dependencies like Express or Fastify.
 
 Sage aims to provide the following core features:
 
-- **Pure Node.js HTTP:** Leveraging Node.js's built-in `http` module for core server
-  functionality.
-- **Router with Dynamic Route Matching:** Support for defining routes with dynamic
-  parameters (e.g., `/user/:id`).
-- **Middleware System:** A flexible system for processing requests and responses
-  through a chain of functions.
-- **Request Body Parsing:** Built-in support for parsing common request body
-  types like JSON and URL-encoded.
-- **Typed Handler Functions:** Strong typing for route handler functions,
-  including a context object for request and response data.
-- **Composable Structure:** Encouraging a modular approach to building applications
-  with separate files for servers, routes, and handlers.
-- **Extensible:** Designed to be easy to extend with custom middleware and
-  functionality (e.g., CORS, serving static files).
+- **Pure Node.js HTTP:** Leveraging Node.js's built-in `http` module for core server functionality.
+- **Router with Dynamic Route Matching:** Support for defining routes with dynamic parameters (e.g., `/user/:id`).
+- **Expressive Routing API:** Use `router.get(...)`, `router.post(...)`, etc. for clean route registration.
+- **Support for All HTTP Methods:** Built-in handling for `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `OPTIONS`, and `HEAD`.
+- **Middleware System:** Global and per-route middleware support with a flexible execution engine.
+- **Request Body Parsing:** Built-in JSON body parser (URL-encoded support planned).
+- **Typed Handler Functions:** Strong typing for route handler functions, including a context object (`ctx`) with `req`, `res`, `params`, and helpers.
+- **Composable Structure:** Modular architecture with separation of concerns between core logic, routes, and handlers.
+- **Extensible:** Designed to be extended with custom middleware and features (e.g., CORS, static file serving, logging, validation).
 
 ## 🗂️ Project Structure
 
@@ -52,8 +47,13 @@ Sage/
 
 ## 🚀 Getting Started (Planned)
 
-Details on how to install, set up, and run Sage will be added here once the
-initial development is complete.
+Details on how to install, run, and extend Sage will be added once the framework stabilizes
+
+## 🧪 Testing
+
+All HTTP methods (GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD) are supported and tested using Bruno.
+
+More automated testing with Vitest and Supertest is planned.
 
 ## 🤝 Contributing (Planned)
 

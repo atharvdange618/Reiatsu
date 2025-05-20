@@ -1,12 +1,13 @@
 import { IncomingMessage, ServerResponse } from "http";
-import { Route, Context } from "../types/http";
-import { helloHandler } from "../handlers/helloHandler";
-import { userHandler } from "../handlers/userHandler";
+import { Route, Context, Middleware } from "../types/http";
+import { runMiddlewares } from "./middleware";
+import { routes } from "../routes";
 
-const routes: Route[] = [
-  { method: "GET", path: "/", handler: helloHandler },
-  { method: "GET", path: "/user/:id", handler: userHandler },
-];
+const globalMiddlewares: Middleware[] = [];
+
+export const use = (middleware: Middleware) => {
+  globalMiddlewares.push(middleware);
+};
 
 /**
  * Attempts to match the incoming method + URL to a route in our route table.
@@ -51,7 +52,7 @@ function matchRoute(
 }
 
 /**
- * The router interface. This is the only function that `server.ts` needs to call.
+ * The router interface.
  */
 export const router = {
   handle(req: IncomingMessage, res: ServerResponse) {
@@ -73,7 +74,9 @@ export const router = {
       params: match.params,
     };
 
-    // Call the matched route’s handler with context
-    match.route.handler(ctx);
+    const routeMiddlewares = match.route.middlewares || [];
+    const allMiddlewares = [...globalMiddlewares, ...routeMiddlewares];
+
+    runMiddlewares(ctx, allMiddlewares, match.route.handler);
   },
 };

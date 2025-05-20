@@ -25,6 +25,12 @@ export interface Context {
 export type Handler = (ctx: Context) => void;
 
 /**
+ * Function signature for route middlewares.
+ * Accepts a Context object and next, returns void.
+ */
+export type Middleware = (ctx: Context, next: () => void) => void;
+
+/**
  * Represents a route definition.
  * Contains:
  * - `method`: HTTP verb (GET, POST, etc.)
@@ -35,4 +41,5 @@ export interface Route {
   method: string;
   path: string;
   handler: Handler;
+  middlewares?: Middleware[];
 }

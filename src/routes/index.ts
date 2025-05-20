@@ -1,3 +1,4 @@
+import { echoHandler } from "../handlers/echoHandler";
 import { helloHandler } from "../handlers/helloHandler";
 import { privateHandler } from "../handlers/privateHandler";
 import { userHandler } from "../handlers/userHandler";
@@ -13,4 +14,5 @@ export const routes: Route[] = [
     handler: privateHandler,
     middlewares: [authMiddleware],
   },
+  { method: "POST", path: "/echo", handler: echoHandler },
 ];

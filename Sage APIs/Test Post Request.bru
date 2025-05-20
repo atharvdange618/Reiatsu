@@ -1,0 +1,15 @@
+meta {
+  name: Test Post Request
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/echo
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {"hello":"world"}
+}

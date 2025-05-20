@@ -16,6 +16,7 @@ export interface Context {
   req: IncomingMessage;
   res: ServerResponse;
   params: RouteParams;
+  body?: any;
 }
 
 /**

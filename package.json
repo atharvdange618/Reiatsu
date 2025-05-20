@@ -1,0 +1,31 @@
+{
+  "name": "sage",
+  "version": "1.0.0",
+  "description": "A minimal TypeScript HTTP server framework, built from first principles.",
+  "keywords": [
+    "Framework",
+    "TypeScript",
+    "HTTP",
+    "Node.js"
+  ],
+  "homepage": "https://github.com/atharvdange618/Sage#readme",
+  "bugs": {
+    "url": "https://github.com/atharvdange618/Sage/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atharvdange618/Sage.git"
+  },
+  "license": "ISC",
+  "author": "Atharv Dange",
+  "type": "commonjs",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.19",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

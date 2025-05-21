@@ -4,7 +4,6 @@ import { helloHandler } from "../handlers/helloHandler";
 import { privateHandler } from "../handlers/privateHandler";
 import { userHandler } from "../handlers/userHandler";
 import { authMiddleware } from "../middleware/auth";
-import { serveStatic } from "../middleware/static";
 import { Context } from "../types/http";
 
 // const legacyRoutes: Route[] = [
@@ -23,7 +22,10 @@ router.get("/", helloHandler);
 router.get("/user/:id", userHandler);
 router.get("/private", authMiddleware, privateHandler);
 router.post("/echo", echoHandler);
-router.get("/static/*", serveStatic("public"));
+
+router.get("/static/*", async (ctx: Context) => {
+  ctx.res.writeHead(404).end("File not found");
+});
 
 // test routes to test all http methods
 router.get("/test", (ctx: Context) => {

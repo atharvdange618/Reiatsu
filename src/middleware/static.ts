@@ -1,20 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { Context, Middleware } from "../types/http";
-
-const mimeTypes: Record<string, string> = {
-  ".html": "text/html",
-  ".css": "text/css",
-  ".js": "application/javascript",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".txt": "text/plain",
-};
+import { getMimeType } from "../utils/mime";
 
 export function serveStatic(baseDir: string): Middleware {
   return async (ctx: Context, next) => {
@@ -39,9 +26,8 @@ export function serveStatic(baseDir: string): Middleware {
     try {
       const data = await fs.readFile(resolvedPath);
       const ext = path.extname(resolvedPath).toLowerCase();
-      const contentType = mimeTypes[ext] || "application/octet-stream";
 
-      ctx.res.writeHead(200, { "Content-Type": contentType });
+      ctx.res.writeHead(200, { "Content-Type": getMimeType(resolvedPath) });
       ctx.res.end(data);
     } catch (err: any) {
       if (err.code === "ENOENT") {

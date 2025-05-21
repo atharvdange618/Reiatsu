@@ -24,15 +24,14 @@ function matchRoute(
     const urlParts = url.split("/").filter(Boolean);
 
     const params: Record<string, string> = {};
-
     let matched = true;
+
     for (let i = 0; i < routeParts.length; i++) {
       const routePart = routeParts[i];
       const urlPart = urlParts[i];
 
       if (routePart === "*") {
-        // Match all remaining parts
-        break;
+        return { route, params };
       }
 
       if (!urlPart) {
@@ -49,11 +48,13 @@ function matchRoute(
       }
     }
 
-    if (
-      matched &&
-      (routeParts.includes("*") || routeParts.length === urlParts.length)
-    ) {
-      return { route, params };
+    if (matched && routeParts.length <= urlParts.length) {
+      if (
+        routeParts[routeParts.length - 1] === "*" ||
+        routeParts.length === urlParts.length
+      ) {
+        return { route, params };
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import { router } from "../core/router";
 import { echoHandler } from "../handlers/echoHandler";
+import { formHandler } from "../handlers/formHandler";
 import { helloHandler } from "../handlers/helloHandler";
 import { privateHandler } from "../handlers/privateHandler";
 import { queryHandler } from "../handlers/queryHandler";
@@ -24,6 +25,7 @@ router.get("/user/:id", userHandler);
 router.get("/private", authMiddleware, privateHandler);
 router.post("/echo", echoHandler);
 router.get("/search", queryHandler);
+router.post("/submit-form", formHandler);
 
 // test routes to test all http methods
 router.get("/test", (ctx: Context) => {

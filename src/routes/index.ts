@@ -2,6 +2,7 @@ import { router } from "../core/router";
 import { echoHandler } from "../handlers/echoHandler";
 import { helloHandler } from "../handlers/helloHandler";
 import { privateHandler } from "../handlers/privateHandler";
+import { queryHandler } from "../handlers/queryHandler";
 import { userHandler } from "../handlers/userHandler";
 import { authMiddleware } from "../middleware/auth";
 import { Context } from "../types/http";
@@ -22,10 +23,7 @@ router.get("/", helloHandler);
 router.get("/user/:id", userHandler);
 router.get("/private", authMiddleware, privateHandler);
 router.post("/echo", echoHandler);
-
-router.get("/static/*", async (ctx: Context) => {
-  ctx.res.writeHead(404).end("File not found");
-});
+router.get("/search", queryHandler);
 
 // test routes to test all http methods
 router.get("/test", (ctx: Context) => {

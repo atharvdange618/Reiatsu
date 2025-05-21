@@ -6,6 +6,11 @@ import { IncomingMessage, ServerResponse } from "http";
 export type RouteParams = Record<string, string>;
 
 /**
+ * Type for extracted query parameters.
+ */
+export type QueryParams = Record<string, string | string[]>;
+
+/**
  * A shared context object passed to all route handlers.
  * Contains:
  * - `req`: the raw HTTP request
@@ -17,6 +22,7 @@ export interface Context {
   res: ServerResponse;
   params: RouteParams;
   body?: any;
+  query?: QueryParams;
 
   // Helpers
   status?: (code: number) => Context;

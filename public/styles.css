@@ -1,4 +1,13 @@
-body {
-  background-color: black;
-  color: white;
+h1 {
+  background-color: white;
+  color: seagreen;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

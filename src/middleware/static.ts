@@ -5,6 +5,7 @@ import { getMimeType } from "../utils/mime";
 
 export function serveStatic(baseDir: string): Middleware {
   return async (ctx: Context, next) => {
+    // Only process requests that start with /static/
     if (!ctx.req.url?.startsWith("/static/")) {
       await next();
       return;
@@ -12,8 +13,9 @@ export function serveStatic(baseDir: string): Middleware {
 
     const { url = "" } = ctx.req;
 
-    const unsafePath = decodeURIComponent(url.replace(/^\/static/, ""));
-    const resolvedPath = path.resolve(process.cwd(), baseDir, `.${unsafePath}`);
+    // Extract path after /static/ prefix
+    const unsafePath = decodeURIComponent(url.replace(/^\/static\//, ""));
+    const resolvedPath = path.resolve(process.cwd(), baseDir, unsafePath);
     const safeBase = path.resolve(process.cwd(), baseDir);
 
     // 🛡 Prevent path traversal: ensure the resolved path starts with the base dir
@@ -31,8 +33,10 @@ export function serveStatic(baseDir: string): Middleware {
       ctx.res.end(data);
     } catch (err: any) {
       if (err.code === "ENOENT") {
+        // File not found, proceed to next middleware
         await next();
       } else {
+        console.error("Static file error:", err);
         ctx.res.writeHead(500, { "Content-Type": "text/plain" });
         ctx.res.end("Internal Server Error");
       }

@@ -4,9 +4,10 @@ import { formHandler } from "../handlers/formHandler";
 import { helloHandler } from "../handlers/helloHandler";
 import { privateHandler } from "../handlers/privateHandler";
 import { queryHandler } from "../handlers/queryHandler";
-import { userHandler } from "../handlers/userHandler";
+import { createUserHandler, getUserHandler } from "../handlers/userHandler";
 import { authMiddleware } from "../middleware/auth";
 import { Context } from "../types/http";
+import { asyncHandler } from "../utils/asyncHandler";
 
 // const legacyRoutes: Route[] = [
 //   { method: "GET", path: "/", handler: helloHandler },
@@ -21,7 +22,8 @@ import { Context } from "../types/http";
 // ];
 
 router.get("/", helloHandler);
-router.get("/user/:id", userHandler);
+router.get("/user/:id", asyncHandler(getUserHandler));
+router.post("/user", asyncHandler(createUserHandler));
 router.get("/private", authMiddleware, privateHandler);
 router.post("/echo", echoHandler);
 router.get("/search", queryHandler);

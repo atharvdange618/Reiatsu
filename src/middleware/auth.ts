@@ -1,16 +1,12 @@
+import { AuthenticationError } from "../errors/AppError";
 import { Middleware } from "../types/http";
 
-export const authMiddleware: Middleware = (ctx, next) => {
+export const authMiddleware: Middleware = async (ctx, next) => {
   const authHeader = ctx.req.headers["authorization"];
 
-  // Simple check
   if (authHeader !== "Bearer secrettoken") {
-    ctx.res.writeHead(401, {
-      "Content-Type": "application/json",
-    });
-    ctx.res.end(JSON.stringify({ error: "Unauthorized" }));
-    return;
+    throw new AuthenticationError("Invalid or missing authentication token");
   }
 
-  next();
+  await next();
 };

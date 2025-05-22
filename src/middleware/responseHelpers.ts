@@ -1,6 +1,6 @@
 import { Middleware } from "../types/http";
 
-export const responseHelpersMiddleware: Middleware = (ctx, next) => {
+export const responseHelpersMiddleware: Middleware = async (ctx, next) => {
   ctx.status = (code) => {
     ctx.res.statusCode = code;
     return ctx;
@@ -11,5 +11,5 @@ export const responseHelpersMiddleware: Middleware = (ctx, next) => {
     ctx.res.end(JSON.stringify(data));
   };
 
-  next();
+  await next();
 };

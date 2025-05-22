@@ -23,23 +23,24 @@ export interface Context {
   params: RouteParams;
   body?: any;
   query?: QueryParams;
-
-  // Helpers
   status?: (code: number) => Context;
   json?: (data: unknown) => void;
 }
 
 /**
  * Function signature for route handlers.
- * Accepts a Context object, returns void.
+ * Accepts a Context object, returns void or Promise<void>.
  */
-export type Handler = (ctx: Context) => void;
+export type Handler = (ctx: Context) => void | Promise<void>;
 
 /**
  * Function signature for route middlewares.
- * Accepts a Context object and next, returns void.
+ * Accepts a Context object and next, returns void or Promise<void>.
  */
-export type Middleware = (ctx: Context, next: () => void) => void;
+export type Middleware = (
+  ctx: Context,
+  next: () => void | Promise<void>
+) => void | Promise<void>;
 
 /**
  * Represents a route definition.

@@ -1,0 +1,25 @@
+meta {
+  name: Test to create user
+  type: http
+  seq: 12
+}
+
+post {
+  url: http://localhost:3000/user
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+  "name":"atharv",
+  "email":"atharvdange618@gmail.com",
+  "age":"asd"
+  }
+}
+
+body:form-urlencoded {
+  name: atharv
+  email: atharvdange618@gmail.com
+  age: asdf
+}

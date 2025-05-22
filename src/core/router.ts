@@ -73,7 +73,7 @@ export const router: {
 } = {
   routes,
 
-  handle(req: IncomingMessage, res: ServerResponse) {
+  async handle(req: IncomingMessage, res: ServerResponse) {
     const fullUrl = new URL(req.url || "", `http://${req.headers.host}`);
     const query: Record<string, string | string[]> = {};
     fullUrl.searchParams.forEach((value, key) => {
@@ -93,33 +93,31 @@ export const router: {
       query,
     };
 
-    const runGlobalMiddlewares = async () => {
-      try {
-        await runMiddlewares(ctx, globalMiddlewares, async () => {
-          // After global middlewares, proceed to route matching
-          const match = matchRoute(req.method || "", req.url || "");
+    try {
+      // Run global middlewares first
+      await runMiddlewares(ctx, globalMiddlewares, async () => {
+        // After global middlewares, proceed to route matching
+        const match = matchRoute(req.method || "", req.url || "");
 
-          if (!match) {
-            res.writeHead(404, { "Content-Type": "text/plain" });
-            res.end("Route Not Found");
-            return;
-          }
-
-          ctx.params = match.params;
-
-          const routeMiddlewares = match.route.middlewares || [];
-          await runMiddlewares(ctx, routeMiddlewares, match.route.handler);
-        });
-      } catch (err) {
-        console.error("Middleware error:", err);
-        if (!res.headersSent) {
-          res.writeHead(500, { "Content-Type": "text/plain" });
-          res.end("Internal Server Error");
+        if (!match) {
+          res.writeHead(404, { "Content-Type": "text/plain" });
+          res.end("Route Not Found");
+          return;
         }
-      }
-    };
 
-    runGlobalMiddlewares();
+        ctx.params = match.params;
+        const routeMiddlewares = match.route.middlewares || [];
+
+        // Run route-specific middlewares + handler
+        await runMiddlewares(ctx, routeMiddlewares, match.route.handler);
+      });
+    } catch (err) {
+      console.error("Router error:", err);
+      if (!res.headersSent) {
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Internal Server Error");
+      }
+    }
   },
 };
 

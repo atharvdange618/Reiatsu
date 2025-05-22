@@ -1,21 +1,29 @@
+// src/core/middleware.ts
 import { Context, Handler, Middleware } from "../types/http";
 
 /**
  * Executes middleware functions in order, then the final handler.
+ * Fully promise-based to handle async middleware properly.
  */
-export function runMiddlewares(
+export async function runMiddlewares(
   ctx: Context,
   middlewares: Middleware[],
   handler: Handler
-) {
-  const run = (index: number): void => {
+): Promise<void> {
+  const runNext = async (index: number): Promise<void> => {
     if (index < middlewares.length) {
       const middleware = middlewares[index];
-      middleware(ctx, () => run(index + 1)); // Call the next middleware
+
+      // Create the next function that the middleware will call
+      const next = () => runNext(index + 1);
+
+      // Execute middleware and await if it returns a promise
+      await middleware(ctx, next);
     } else {
-      handler(ctx); // No more middleware — call the route handler
+      // Call the route handler
+      await handler(ctx);
     }
   };
 
-  run(0);
+  await runNext(0);
 }

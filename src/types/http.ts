@@ -16,6 +16,12 @@ export type QueryParams = Record<string, string | string[]>;
  * - `req`: the raw HTTP request
  * - `res`: the raw HTTP response
  * - `params`: dynamic route parameters
+ * - `body`: parsed request body
+ * - `query`: parsed query parameters
+ * - `requestId`: unique identifier for this request
+ * - `status`: helper function to set response status code
+ * - `json`: helper function to send JSON response
+ * - `redirect`: helper function to redirect to another URL
  */
 export interface Context {
   req: IncomingMessage;
@@ -23,8 +29,10 @@ export interface Context {
   params: RouteParams;
   body?: any;
   query?: QueryParams;
+  requestId?: string;
   status?: (code: number) => Context;
   json?: (data: unknown) => void;
+  redirect?: (url: string, status?: number) => Promise<void>;
 }
 
 /**
@@ -48,6 +56,7 @@ export type Middleware = (
  * - `method`: HTTP verb (GET, POST, etc.)
  * - `path`: URL pattern (e.g., /user/:id)
  * - `handler`: function to run when the route matches
+ * - `middlewares`: optional array of middlewares for this route
  */
 export interface Route {
   method: string;

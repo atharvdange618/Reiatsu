@@ -11,5 +11,10 @@ export const responseHelpersMiddleware: Middleware = async (ctx, next) => {
     ctx.res.end(JSON.stringify(data));
   };
 
+  ctx.redirect = (url: string, status = 302) => {
+    ctx.res.writeHead(status, { Location: url });
+    ctx.res.end();
+  };
+
   await next();
 };

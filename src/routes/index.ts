@@ -6,6 +6,8 @@ import { privateHandler } from "../handlers/privateHandler";
 import { queryHandler } from "../handlers/queryHandler";
 import { createUserHandler, getUserHandler } from "../handlers/userHandler";
 import { authMiddleware } from "../middleware/auth";
+import { createCorsMiddleware } from "../middleware/cors";
+import { getRequestId } from "../middleware/requestId";
 import { Context } from "../types/http";
 import { asyncHandler } from "../utils/asyncHandler";
 
@@ -28,6 +30,53 @@ router.get("/private", authMiddleware, privateHandler);
 router.post("/echo", echoHandler);
 router.get("/search", queryHandler);
 router.post("/submit-form", formHandler);
+
+router.get(
+  "/api/public",
+  createCorsMiddleware({ origin: "*" }),
+  (ctx: Context) => {
+    ctx.status?.(200).json?.({
+      message: "Public API endpoint",
+      requestId: getRequestId(ctx),
+    });
+  }
+);
+
+router.post("/api/users", async (ctx: Context) => {
+  const requestId = getRequestId(ctx);
+
+  console.log(`[${requestId}] Creating user:`, ctx.body);
+
+  try {
+    // Simulate user creation
+    const user = {
+      id: Math.random().toString(36).substr(2, 9),
+      ...ctx.body,
+      createdAt: new Date().toISOString(),
+    };
+
+    console.log(`[${requestId}] User created successfully:`, user.id);
+
+    ctx.status?.(201).json?.({
+      success: true,
+      data: user,
+      meta: {
+        requestId: requestId,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error(`[${requestId}] Failed to create user:`, error);
+    throw error;
+  }
+});
+
+router.get("/api/error-example", (ctx: Context) => {
+  const requestId = getRequestId(ctx);
+
+  // Simulate an error
+  throw new Error(`Something went wrong [${requestId}]`);
+});
 
 // test routes to test all http methods
 router.get("/test", (ctx: Context) => {

@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from "http";
 import { Route, Context, Middleware, Handler, HTTPMethod } from "../types/http";
 import { runMiddlewares } from "./middleware";
+import { createContext } from "../utils/context";
 
 const globalMiddlewares: Middleware[] = [];
 const routes: CompiledRoute[] = [];
@@ -132,7 +133,8 @@ export const router: {
       }
     });
 
-    const ctx: Context = { req, res, params: {}, query };
+    const ctx = createContext(req, res, query);
+
     try {
       await runMiddlewares(ctx, globalMiddlewares, async () => {
         const match = matchRoute(req.method || "", req.url || "");

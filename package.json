@@ -1,27 +1,31 @@
 {
-  "name": "sage",
+  "name": "reiatsu",
   "version": "1.0.0",
   "description": "A minimal TypeScript HTTP server framework, built from first principles.",
   "keywords": [
-    "Framework",
-    "TypeScript",
-    "HTTP",
-    "Node.js"
+    "http",
+    "server",
+    "framework",
+    "nodejs",
+    "typescript",
+    "router",
+    "middleware"
   ],
-  "homepage": "https://github.com/atharvdange618/Sage#readme",
+  "homepage": "https://github.com/atharvdange618/Reiatsu#readme",
   "bugs": {
-    "url": "https://github.com/atharvdange618/Sage/issues"
+    "url": "https://github.com/atharvdange618/Reiatsu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/atharvdange618/Sage.git"
+    "url": "git+https://github.com/atharvdange618/Reiatsu.git"
   },
   "license": "ISC",
   "author": "Atharv Dange",
-  "type": "commonjs",
+  "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --build tsconfig.build.json",
     "prepare": "npm run build",
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts"
@@ -30,5 +34,14 @@
     "@types/node": "^22.15.19",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=14"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.5"
   }
 }

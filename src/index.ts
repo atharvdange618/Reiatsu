@@ -1,12 +1,11 @@
 import { use } from "./core/router";
-import { startServer } from "./core/server";
+import { serve } from "./core/server";
 import { bodyParserMiddleware } from "./middleware/bodyParser";
 import { corsPresets } from "./middleware/cors";
 import { errorHandlerMiddleware } from "./middleware/errorHandler";
 import {
   createLoggerMiddleware,
   devLoggerMiddleware,
-  loggerMiddleware,
 } from "./middleware/logger";
 import { createRateLimiter } from "./middleware/rateLimiter";
 import { createRequestIdMiddleware } from "./middleware/requestId";
@@ -62,10 +61,10 @@ import "./routes";
 
 const port = parseInt(process.env.PORT || "3000", 10);
 
-startServer(port);
+serve(port);
 
 console.log(
-  `🚀 Sage framework started in ${
+  `🚀 Reiatsu framework started in ${
     isDevelopment ? "development" : "production"
   } mode`
 );
@@ -76,3 +75,26 @@ console.log(
 );
 console.log(`🔍 Request ID tracking: Enabled`);
 console.log(`📊 Logging: ${isDevelopment ? "Verbose" : "Standard"}`);
+
+// Framework
+export { serve } from "./core/server";
+export { router, use } from "./core/router";
+
+// Middleware
+export { responseHelpersMiddleware } from "./middleware/responseHelpers";
+export { bodyParserMiddleware } from "./middleware/bodyParser";
+export { corsPresets } from "./middleware/cors";
+export { errorHandlerMiddleware } from "./middleware/errorHandler";
+export {
+  createLoggerMiddleware,
+  devLoggerMiddleware,
+} from "./middleware/logger";
+export { createRateLimiter } from "./middleware/rateLimiter";
+export { createRequestIdMiddleware } from "./middleware/requestId";
+export { createRequestSizeLimiter } from "./middleware/requestSize";
+export { createTimeoutMiddleware } from "./middleware/requestTimeout";
+export { createSecurityHeadersMiddleware } from "./middleware/security";
+export { serveStatic } from "./middleware/static";
+
+// Types
+export type { Context, Handler, Middleware } from "./types/http";

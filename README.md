@@ -1,8 +1,15 @@
-# Sage
+# Reiatsu
+
+██████╗ ███████╗██╗ █████╗ ████████╗███████╗██╗   ██╗
+██╔══██╗██╔════╝██║██╔══██╗╚══██╔══╝██╔════╝██║   ██║
+██████╔╝█████╗  ██║███████║   ██║   ███████╗██║   ██║
+██╔══██╗██╔══╝  ██║██╔══██║   ██║   ╚════██║██║   ██║
+██║  ██║███████╗██║██║  ██║   ██║   ███████║╚██████╔╝
+╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝
 
 A minimal, type-safe HTTP server framework built from first principles using pure Node.js.
 
-Sage is designed to be a lightweight, understandable, and production-ready framework for building HTTP servers in Node.js **without any external dependencies**. Built entirely using Node.js built-in modules, Sage provides everything you need for modern web application development while maintaining simplicity and performance.
+Reiatsu is designed to be a lightweight, understandable, and production-ready framework for building HTTP servers in Node.js **without any external dependencies**. Built entirely using Node.js built-in modules, Reiatsu provides everything you need for modern web application development while maintaining simplicity and performance.
 
 ## ✨ Features
 
@@ -25,7 +32,7 @@ Sage is designed to be a lightweight, understandable, and production-ready frame
 ### 🔧 Comprehensive Middleware System
 
 - **Global & Route-Specific**: Flexible middleware execution with proper async/await support
-- **Request/Response Helpers**: Built-in JSON responses, status codes, and redirects
+- **Request/Response Helpers**: Built-in methods like `.status()`, `.json()`, `.redirect()` for clean handler logic
 - **Body Parsing**: JSON and URL-encoded form data parsing
 - **CORS Support**: Configurable CORS with development and production presets
 - **Request Logging**: Detailed request/response logging with customizable formats
@@ -45,62 +52,19 @@ Sage is designed to be a lightweight, understandable, and production-ready frame
 
 ### 🛠️ Developer Experience
 
-- **Hot Reloading Ready**: Works seamlessly with development tools
 - **Detailed Logging**: Request/response logging with colorized output for development
 - **Environment Detection**: Automatic development vs production behavior
 - **Type Safety**: Full TypeScript support with comprehensive type definitions
 - **Extensible Architecture**: Easy to extend with custom middleware and features
-
-## 🗂️ Project Structure
-
-```
-Sage/
-├── src/
-│   ├── core/
-│   │   ├── server.ts          # HTTP server bootstrap
-│   │   ├── router.ts          # Route matching and handling
-│   │   └── middleware.ts      # Middleware execution engine
-│   ├── middleware/
-│   │   ├── auth.ts           # Authentication middleware
-│   │   ├── bodyParser.ts     # Request body parsing
-│   │   ├── cors.ts           # CORS handling with presets
-│   │   ├── errorHandler.ts   # Centralized error handling
-│   │   ├── logger.ts         # Request/response logging
-│   │   ├── rateLimiter.ts    # Rate limiting protection
-│   │   ├── requestId.ts      # Request ID generation
-│   │   ├── security.ts       # Security headers
-│   │   ├── static.ts         # Static file serving
-│   │   └── responseHelpers.ts # Response utilities
-│   ├── types/
-│   │   └── http.ts           # TypeScript type definitions
-│   ├── errors/
-│   │   └── AppError.ts       # Custom error classes
-│   ├── utils/
-│   │   ├── validation.ts     # Input validation utilities
-│   │   ├── mime.ts          # MIME type detection
-│   │   └── asyncHandler.ts   # Async error handling wrapper
-│   ├── handlers/
-│   │   ├── userHandler.ts    # Example user CRUD handlers
-│   │   ├── helloHandler.ts   # Basic route handlers
-│   │   └── ...               # Additional route handlers
-│   ├── routes/
-│   │   └── index.ts          # Route definitions
-│   └── index.ts              # Framework entry point
-├── public/                   # Static files directory
-├── tests/
-│   └── server.test.ts       # Test files
-├── package.json
-├── tsconfig.json
-└── README.md
-```
+- **Modern Response Helpers**: Chainable and composable helpers (`ctx.status().json()`) for clean and expressive route logic
 
 ## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-git clone https://github.com/atharvdange618/Sage.git
-cd Sage
+git clone https://github.com/atharvdange618/Reiatsu.git
+cd Reiatsu
 npm install
 ```
 
@@ -108,28 +72,28 @@ npm install
 
 ```typescript
 import { router } from "./src/core/router";
-import { startServer } from "./src/core/server";
+import { serve } from "./src/core/server";
 
 // Define routes
 router.get("/", (ctx) => {
-  ctx.status?.(200).json?.({ message: "Hello, World!" });
+  ctx.status(200).json({ message: "Hello, World!" });
 });
 
 router.get("/user/:id", (ctx) => {
   const { id } = ctx.params;
-  ctx.status?.(200).json?.({ userId: id });
+  ctx.status(200).json({ userId: id });
 });
 
 router.post("/users", (ctx) => {
   const userData = ctx.body;
-  ctx.status?.(201).json?.({
+  ctx.status(201).json({
     message: "User created",
     data: userData,
   });
 });
 
 // Start server
-startServer(3000);
+serve(3000);
 ```
 
 ### Middleware Usage
@@ -145,7 +109,7 @@ use(corsMiddleware);
 
 // Route-specific middleware
 router.get("/protected", authMiddleware, (ctx) => {
-  ctx.status?.(200).json?.({ message: "Protected route" });
+  ctx.status(200).json({ message: "Protected route" });
 });
 ```
 
@@ -167,15 +131,22 @@ Every route handler receives a `Context` object with the following properties:
 
 ```typescript
 interface Context {
-  req: IncomingMessage; // Raw Node.js request
-  res: ServerResponse; // Raw Node.js response
-  params: RouteParams; // Route parameters (/user/:id)
-  body?: any; // Parsed request body
-  query?: QueryParams; // URL query parameters
-  requestId?: string; // Unique request identifier
-  status?: (code: number) => Context; // Set status code
-  json?: (data: unknown) => void; // Send JSON response
-  redirect?: (url: string, status?: number) => void; // Redirect
+  req: IncomingMessage;
+  res: ServerResponse;
+  params: RouteParams;
+  body?: any;
+  query?: QueryParams;
+  requestId?: string;
+  status: (code: number): Context;
+  json: (data: unknown): void;
+  send: (body: string | Buffer, type?: string): void;
+  html: (body: string): void;
+  text: (body: string): void;
+  xml: (body: string): void;
+  redirect: (url: string, status?: number): void;
+  cookie: (name: string, value: string, options?: CookieOptions): void;
+  download: (filePath: string, filename?: string): void;
+  render: (templateName: string, data?: any): void;
 }
 ```
 
@@ -206,13 +177,8 @@ use(middlewareFunction);
 ```typescript
 import { createCorsMiddleware, corsPresets } from "./src/middleware/cors";
 
-// Development preset (allows all origins)
 use(corsPresets.development());
-
-// Production preset (specific origins)
 use(corsPresets.production(["https://myapp.com"]));
-
-// Custom configuration
 use(
   createCorsMiddleware({
     origin: ["https://trusted-site.com"],
@@ -227,7 +193,6 @@ use(
 ```typescript
 import { createRateLimiter } from "./src/middleware/rateLimiter";
 
-// 100 requests per 15 minutes
 use(createRateLimiter(100, 15 * 60 * 1000));
 ```
 
@@ -239,10 +204,7 @@ import {
   devLoggerMiddleware,
 } from "./src/middleware/logger";
 
-// Development logging (verbose)
 use(devLoggerMiddleware);
-
-// Production logging (minimal)
 use(
   createLoggerMiddleware({
     includeRequestId: true,
@@ -257,13 +219,10 @@ use(
 ```typescript
 import { serveStatic } from "./src/middleware/static";
 
-// Serve files from 'public' directory at '/static/*'
 use(serveStatic("public"));
 ```
 
 ## 🔍 Error Handling
-
-Sage provides structured error handling with custom error classes:
 
 ```typescript
 import {
@@ -272,7 +231,6 @@ import {
   AuthenticationError,
 } from "./src/errors/AppError";
 
-// In route handlers
 router.post("/users", async (ctx) => {
   if (!ctx.body.email) {
     throw new ValidationError("Email is required");
@@ -281,14 +239,10 @@ router.post("/users", async (ctx) => {
   if (userNotFound) {
     throw new NotFoundError("User");
   }
-
-  // Errors are automatically caught and formatted
 });
 ```
 
 ## 🧪 Input Validation
-
-Built-in validation utilities:
 
 ```typescript
 import { Validator } from "./src/utils/validation";
@@ -319,12 +273,12 @@ ALLOWED_ORIGINS=https://myapp.com,https://api.myapp.com
 
 ### Production Features
 
-- **Automatic Security Headers**: XSS protection, content type options, frame options
-- **Request Rate Limiting**: Configurable rate limiting per IP
-- **Request Size Limiting**: Protection against large payloads
-- **Request Timeouts**: Automatic timeout handling
-- **Structured Logging**: JSON-formatted logs for production monitoring
-- **Error Sanitization**: Sensitive error details hidden in production
+- **Automatic Security Headers**
+- **Request Rate Limiting**
+- **Request Size Limiting**
+- **Request Timeouts**
+- **Structured Logging**
+- **Error Sanitization**
 
 ## 📋 Development Roadmap
 
@@ -351,14 +305,14 @@ This is a learning project built from first principles. Contributions are welcom
 4. Ensure TypeScript types are properly defined
 5. Submit a pull request
 
-## 📊 Why Sage?
+## 📊 Why Reiatsu?
 
-- **Educational**: Perfect for understanding HTTP server internals
-- **Lightweight**: Zero dependencies, minimal overhead
-- **Type-Safe**: Full TypeScript support out of the box
-- **Production-Ready**: Includes all necessary middleware for real applications
-- **Extensible**: Easy to customize and extend
-- **Modern**: Uses modern JavaScript/TypeScript features and patterns
+- **Educational**
+- **Lightweight**
+- **Type-Safe**
+- **Production-Ready**
+- **Extensible**
+- **Modern**
 
 ## 📄 License
 

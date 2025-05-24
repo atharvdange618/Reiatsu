@@ -1,9 +1,6 @@
 {
   "version": "1",
-  "name": "Sage APIs",
+  "name": "Reiatsu APIs",
   "type": "collection",
-  "ignore": [
-    "node_modules",
-    ".git"
-  ]
+  "ignore": ["node_modules", ".git"]
 }

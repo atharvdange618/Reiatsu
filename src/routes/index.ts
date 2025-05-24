@@ -45,7 +45,7 @@ router.get("/hello", (ctx: Context) => {
 });
 
 router.get("/welcome", (ctx: Context) => {
-  ctx.html(`<h1>Welcome to Sage</h1>`);
+  ctx.html(`<h1>Welcome to Reiatsu</h1>`);
 });
 
 router.get("/data.csv", (ctx: Context) => {

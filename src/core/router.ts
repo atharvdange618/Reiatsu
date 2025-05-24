@@ -3,11 +3,93 @@ import { Route, Context, Middleware, Handler, HTTPMethod } from "../types/http";
 import { runMiddlewares } from "./middleware";
 
 const globalMiddlewares: Middleware[] = [];
-const routes: Route[] = [];
+const routes: CompiledRoute[] = [];
+
+interface CompiledRoute extends Route {
+  regex: RegExp;
+  paramNames: string[];
+  hasWildcard: boolean;
+}
 
 export const use = (middleware: Middleware) => {
   globalMiddlewares.push(middleware);
 };
+
+/**
+ * Compiles a route pattern into a regex with named capture groups
+ * Supports:
+ * - :param - basic parameters
+ * - :param(regex) - parameters with regex constraints
+ * - * - wildcard matching (captures remaining path)
+ */
+export function compileRoute(path: string): {
+  regex: RegExp;
+  paramNames: string[];
+  hasWildcard: boolean;
+} {
+  const paramNames: string[] = [];
+  let hasWildcard = false;
+
+  const ESCAPE = /[.*+?^${}()|\[\]\\]/g;
+
+  const segments = path
+    .split("/")
+    .filter((seg, idx) => !(idx === 0 && seg === ""));
+
+  const parts: string[] = segments.map((segment, idx) => {
+    // Wildcard only if it’s the last segment
+    if (segment === "*" && idx === segments.length - 1) {
+      hasWildcard = true;
+      paramNames.push("wildcard");
+      return `(?<wildcard>.*)`;
+    }
+
+    let segPattern = "";
+    let lastIndex = 0;
+    const paramRegex = /:([a-zA-Z_][a-zA-Z0-9_]*)(?:\(([^)]+)\))?/g;
+    let match: RegExpExecArray | null;
+
+    // :param or :param(regex)
+    while ((match = paramRegex.exec(segment)) !== null) {
+      const [full, name, rawConstraint] = match;
+      const start = match.index;
+
+      if (start > lastIndex) {
+        segPattern += segment.slice(lastIndex, start).replace(ESCAPE, "\\$&");
+      }
+
+      let constraint = rawConstraint!;
+      if (name === "date" && rawConstraint === "\\d{4}-\\d{2}-\\d{2}") {
+        constraint = "(?:\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01]))";
+      }
+
+      paramNames.push(name);
+      if (constraint) {
+        segPattern += `(?<${name}>${constraint})`;
+      } else {
+        segPattern += `(?<${name}>[^/]+)`;
+      }
+
+      lastIndex = start + full.length;
+    }
+
+    if (lastIndex < segment.length) {
+      segPattern += segment.slice(lastIndex).replace(ESCAPE, "\\$&");
+    }
+
+    if (!segPattern) {
+      segPattern = segment.replace(ESCAPE, "\\$&");
+    }
+
+    return segPattern;
+  });
+
+  const prefix = "^" + (parts.length ? "/" + parts.join("/") : "");
+  const suffix = hasWildcard ? "" : "$";
+  const regex = new RegExp(prefix + suffix);
+
+  return { regex, paramNames, hasWildcard };
+}
 
 /**
  * Attempts to match the incoming method + URL to a route in our route table.
@@ -16,50 +98,15 @@ export const use = (middleware: Middleware) => {
 function matchRoute(
   method: string,
   url: string
-): { route: Route; params: Record<string, string> } | null {
+): { route: CompiledRoute; params: Record<string, string> } | null {
   const pathOnly = url.split("?")[0];
-
   for (const route of routes) {
     if (route.method !== method) continue;
-
-    const routeParts = route.path.split("/").filter(Boolean);
-    const urlParts = pathOnly.split("/").filter(Boolean);
-
-    const params: Record<string, string> = {};
-    let matched = true;
-
-    for (let i = 0; i < routeParts.length; i++) {
-      const routePart = routeParts[i];
-      const urlPart = urlParts[i];
-
-      if (routePart === "*") {
-        return { route, params };
-      }
-
-      if (!urlPart) {
-        matched = false;
-        break;
-      }
-
-      if (routePart.startsWith(":")) {
-        const key = routePart.slice(1);
-        params[key] = urlPart;
-      } else if (routePart !== urlPart) {
-        matched = false;
-        break;
-      }
-    }
-
-    if (matched && routeParts.length <= urlParts.length) {
-      if (
-        routeParts[routeParts.length - 1] === "*" ||
-        routeParts.length === urlParts.length
-      ) {
-        return { route, params };
-      }
-    }
+    const m = route.regex.exec(pathOnly);
+    if (!m) continue;
+    const groups = m.groups || {};
+    return { route, params: groups };
   }
-
   return null;
 }
 
@@ -68,48 +115,38 @@ function matchRoute(
  */
 export const router: {
   handle: (req: IncomingMessage, res: ServerResponse) => void;
-  routes: Route[];
+  routes: CompiledRoute[];
   [method: string]: any;
 } = {
   routes,
-
-  async handle(req: IncomingMessage, res: ServerResponse) {
+  async handle(req, res) {
     const fullUrl = new URL(req.url || "", `http://${req.headers.host}`);
     const query: Record<string, string | string[]> = {};
-    fullUrl.searchParams.forEach((value, key) => {
-      if (query[key]) {
-        query[key] = Array.isArray(query[key])
-          ? [...(query[key] as string[]), value]
-          : [query[key] as string, value];
+    fullUrl.searchParams.forEach((v, k) => {
+      if (query[k]) {
+        query[k] = Array.isArray(query[k])
+          ? [...(query[k] as string[]), v]
+          : [query[k] as string, v];
       } else {
-        query[key] = value;
+        query[k] = v;
       }
     });
 
-    const ctx: Context = {
-      req,
-      res,
-      params: {},
-      query,
-    };
-
+    const ctx: Context = { req, res, params: {}, query };
     try {
-      // Run global middlewares first
       await runMiddlewares(ctx, globalMiddlewares, async () => {
-        // After global middlewares, proceed to route matching
         const match = matchRoute(req.method || "", req.url || "");
-
         if (!match) {
           res.writeHead(404, { "Content-Type": "text/plain" });
           res.end("Route Not Found");
           return;
         }
-
         ctx.params = match.params;
-        const routeMiddlewares = match.route.middlewares || [];
-
-        // Run route-specific middlewares + handler
-        await runMiddlewares(ctx, routeMiddlewares, match.route.handler);
+        await runMiddlewares(
+          ctx,
+          match.route.middlewares || [],
+          match.route.handler
+        );
       });
     } catch (err) {
       console.error("Router error:", err);
@@ -139,11 +176,17 @@ methods.forEach((method) => {
     const handler = handlers.pop() as Handler;
     const middlewares = handlers as Middleware[];
 
-    routes.push({
+    const compiled = compileRoute(path);
+    const route: CompiledRoute = {
       method,
       path,
       handler,
       middlewares,
-    });
+      regex: compiled.regex,
+      paramNames: compiled.paramNames,
+      hasWildcard: compiled.hasWildcard,
+    };
+
+    routes.push(route);
   };
 });

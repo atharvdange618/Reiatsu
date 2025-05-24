@@ -32,7 +32,7 @@ export interface Context {
   requestId?: string;
   status?: (code: number) => Context;
   json?: (data: unknown) => void;
-  redirect?: (url: string, status?: number) => Promise<void>;
+  redirect?: (url: string, status?: number) => void;
 }
 
 /**

@@ -21,7 +21,9 @@
   "type": "commonjs",
   "main": "index.ts",
   "scripts": {
-    "start": "tsx src/index.ts"
+    "build": "tsc",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.19",

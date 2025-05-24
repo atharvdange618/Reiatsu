@@ -1,4 +1,3 @@
-// src/core/middleware.ts
 import { Context, Handler, Middleware } from "../types/http";
 
 /**

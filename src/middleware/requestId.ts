@@ -1,37 +1,6 @@
 import { randomBytes } from "crypto";
-import { Middleware } from "../types/http";
+import { Middleware, RequestIdOptions } from "../types/http";
 
-export interface RequestIdOptions {
-  /**
-   * Header name to read existing request ID from
-   * @default "x-request-id"
-   */
-  header?: string;
-
-  /**
-   * Whether to generate a new ID if none exists in headers
-   * @default true
-   */
-  generate?: boolean;
-
-  /**
-   * Custom ID generator function
-   * @default undefined (uses built-in generator)
-   */
-  generator?: () => string;
-
-  /**
-   * Whether to set the request ID in response headers
-   * @default true
-   */
-  setResponseHeader?: boolean;
-
-  /**
-   * Response header name for the request ID
-   * @default "x-request-id"
-   */
-  responseHeader?: string;
-}
 
 const DEFAULT_REQUEST_ID_OPTIONS: Required<RequestIdOptions> = {
   header: "x-request-id",

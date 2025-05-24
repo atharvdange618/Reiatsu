@@ -19,9 +19,10 @@
   "license": "ISC",
   "author": "Atharv Dange",
   "type": "commonjs",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts"
   },

@@ -1,48 +1,4 @@
-import { Middleware } from "../types/http";
-
-export interface LoggerOptions {
-  /**
-   * Whether to include request ID in logs
-   * @default true
-   */
-  includeRequestId?: boolean;
-
-  /**
-   * Whether to log request body (be careful with sensitive data)
-   * @default false
-   */
-  logBody?: boolean;
-
-  /**
-   * Whether to log request headers
-   * @default false
-   */
-  logHeaders?: boolean;
-
-  /**
-   * Custom log format function
-   */
-  formatter?: (logData: LogData) => string;
-
-  /**
-   * Whether to colorize output (useful for development)
-   * @default true if NODE_ENV !== 'production'
-   */
-  colorize?: boolean;
-}
-
-export interface LogData {
-  requestId?: string;
-  method: string;
-  url: string;
-  statusCode?: number;
-  duration?: number;
-  userAgent?: string;
-  ip?: string;
-  body?: any;
-  headers?: Record<string, any>;
-  timestamp: string;
-}
+import { LogData, LoggerOptions, Middleware } from "../types/http";
 
 const DEFAULT_LOGGER_OPTIONS: Required<Omit<LoggerOptions, "formatter">> & {
   formatter?: LoggerOptions["formatter"];

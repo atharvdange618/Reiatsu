@@ -14,7 +14,6 @@ export const bodyParserMiddleware: Middleware = (ctx, next) => {
     return next();
   }
 
-  // Return a promise to handle the async body parsing
   return new Promise<void>((resolve, reject) => {
     let rawBody = "";
 
@@ -34,15 +33,12 @@ export const bodyParserMiddleware: Middleware = (ctx, next) => {
         resolve();
       } catch (err) {
         console.error("Body parsing error:", err);
-        ctx.res.writeHead(400, { "Content-Type": "application/json" });
-        ctx.res.end(
-          JSON.stringify({
-            error: "Invalid request body",
-            details: contentType.includes("application/json")
-              ? "Failed to parse JSON"
-              : "Failed to parse form data",
-          })
-        );
+        ctx.status(400).json({
+          error: "Invalid request body",
+          details: contentType.includes("application/json")
+            ? "Failed to parse JSON"
+            : "Failed to parse form data",
+        });
         resolve();
       }
     });

@@ -30,7 +30,7 @@ export const createUserHandler: Handler = async (ctx) => {
     createdAt: new Date().toISOString(),
   };
 
-  ctx.status?.(201).json?.({
+  ctx.status(201).json({
     success: true,
     data: user,
   });
@@ -54,7 +54,7 @@ export const getUserHandler: Handler = async (ctx) => {
     throw new AuthenticationError();
   }
 
-  ctx.status?.(200).json?.({
+  ctx.status(200).json({
     success: true,
     data: { id, name: "John Doe", email: "john@example.com" },
   });

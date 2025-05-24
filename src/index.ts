@@ -20,6 +20,7 @@ import { serveStatic } from "./middleware/static";
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 use(errorHandlerMiddleware);
+use(responseHelpersMiddleware);
 
 // Core middleware
 use(createTimeoutMiddleware(30000)); // 30 second timeout
@@ -51,8 +52,7 @@ use(
       })
 );
 
-// Response helpers and body parsing
-use(responseHelpersMiddleware);
+// Body Parser
 use(bodyParserMiddleware);
 
 // Static file serving

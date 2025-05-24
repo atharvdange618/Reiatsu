@@ -31,11 +31,38 @@ router.post("/echo", echoHandler);
 router.get("/search", queryHandler);
 router.post("/submit-form", formHandler);
 
+router.get("/me", (ctx: Context) => {
+  ctx.cookie("session", "abcd1234", { httpOnly: true, maxAge: 3600 });
+  ctx.status(200).json({ hello: "world" });
+});
+
+router.get("/download", (ctx: Context) => {
+  ctx.download("./public/index.html", "index.html");
+});
+
+router.get("/hello", (ctx: Context) => {
+  ctx.redirect("/");
+});
+
+router.get("/welcome", (ctx: Context) => {
+  ctx.html(`<h1>Welcome to Sage</h1>`);
+});
+
+router.get("/data.csv", (ctx: Context) => {
+  const csv = "id,name\n1,Alice\n2,Bob\n";
+  ctx.send(csv, "text/csv; charset=utf-8");
+});
+
+router.get("/feed", (ctx: Context) => {
+  const rss = `<rss>…</rss>`;
+  ctx.xml(rss);
+});
+
 router.get(
   "/api/public",
   createCorsMiddleware({ origin: "*" }),
   (ctx: Context) => {
-    ctx.status?.(200).json?.({
+    ctx.status(200).json({
       message: "Public API endpoint",
       requestId: getRequestId(ctx),
     });
@@ -57,7 +84,7 @@ router.post("/api/users", async (ctx: Context) => {
 
     console.log(`[${requestId}] User created successfully:`, user.id);
 
-    ctx.status?.(201).json?.({
+    ctx.status(201).json({
       success: true,
       data: user,
       meta: {
@@ -80,27 +107,27 @@ router.get("/api/error-example", (ctx: Context) => {
 
 // test routes to test all http methods
 router.get("/test", (ctx: Context) => {
-  ctx.status?.(200).json?.({ method: "GET" });
+  ctx.status(200).json({ method: "GET" });
 });
 
 router.post("/test", (ctx: Context) => {
-  ctx.status?.(200).json?.({ method: "POST" });
+  ctx.status(200).json({ method: "POST" });
 });
 
 router.put("/test", (ctx: Context) => {
-  ctx.status?.(200).json?.({ method: "PUT" });
+  ctx.status(200).json({ method: "PUT" });
 });
 
 router.delete("/test", (ctx: Context) => {
-  ctx.status?.(200).json?.({ method: "DELETE" });
+  ctx.status(200).json({ method: "DELETE" });
 });
 
 router.patch("/test", (ctx: Context) => {
-  ctx.status?.(200).json?.({ method: "PATCH" });
+  ctx.status(200).json({ method: "PATCH" });
 });
 
 router.options("/test", (ctx: Context) => {
-  ctx.status?.(200).json?.({ method: "OPTIONS" });
+  ctx.status(200).json({ method: "OPTIONS" });
 });
 
 router.head("/test", (ctx: Context) => {

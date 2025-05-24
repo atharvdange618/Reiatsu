@@ -1,17 +1,5 @@
-import { Middleware } from "../types/http";
+import { ErrorResponse, Middleware } from "../types/http";
 import { AppError, ValidationError } from "../errors/AppError";
-
-interface ErrorResponse {
-  error: string;
-  message: string;
-  statusCode: number;
-  errorCode?: string;
-  details?: any;
-  stack?: string;
-  timestamp: string;
-  path: string;
-  method: string;
-}
 
 export const errorHandlerMiddleware: Middleware = async (ctx, next) => {
   try {

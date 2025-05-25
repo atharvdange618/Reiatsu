@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from "http";
-import { Route, Context, Middleware, Handler, HTTPMethod } from "../types/http";
+import { Route, Middleware, Handler, HTTPMethod } from "../types/http";
 import { runMiddlewares } from "./middleware";
 import { createContext } from "../utils/context";
 

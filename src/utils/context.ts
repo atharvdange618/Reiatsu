@@ -31,6 +31,7 @@ export function createContext(
     cookie: noop,
     download: noop,
     render: noop,
+    renderFile: noop,
   };
   return ctx;
 }

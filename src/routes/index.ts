@@ -31,6 +31,18 @@ router.post("/echo", echoHandler);
 router.get("/search", queryHandler);
 router.post("/submit-form", formHandler);
 
+router.get("/render-ejs", async (ctx: Context) => {
+  await ctx.renderFile("index.ejs", {
+    title: "My Grocery List",
+    items: ["Apple", "Banana", "Cherry"],
+  });
+});
+
+router.get("/inline", async (ctx: Context) => {
+  const tpl = "<h1><%= title %></h1>";
+  ctx.render(tpl, { title: "Inline Render" });
+});
+
 router.get("/me", (ctx: Context) => {
   ctx.cookie("session", "abcd1234", { httpOnly: true, maxAge: 3600 });
   ctx.status(200).json({ hello: "world" });

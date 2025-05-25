@@ -1,12 +1,5 @@
 # Reiatsu
 
-██████╗ ███████╗██╗ █████╗ ████████╗███████╗██╗   ██╗
-██╔══██╗██╔════╝██║██╔══██╗╚══██╔══╝██╔════╝██║   ██║
-██████╔╝█████╗  ██║███████║   ██║   ███████╗██║   ██║
-██╔══██╗██╔══╝  ██║██╔══██║   ██║   ╚════██║██║   ██║
-██║  ██║███████╗██║██║  ██║   ██║   ███████║╚██████╔╝
-╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝
-
 A minimal, type-safe HTTP server framework built from first principles using pure Node.js.
 
 Reiatsu is designed to be a lightweight, understandable, and production-ready framework for building HTTP servers in Node.js **without any external dependencies**. Built entirely using Node.js built-in modules, Reiatsu provides everything you need for modern web application development while maintaining simplicity and performance.

@@ -1,6 +1,7 @@
 import { Middleware } from "../types/http";
 import { readFileSync, statSync } from "fs";
 import { extname, basename } from "path";
+import { render, renderFile } from "../core/template-engine";
 
 export const responseHelpersMiddleware: Middleware = async (ctx, next) => {
   ctx.status = (code) => {
@@ -70,6 +71,16 @@ export const responseHelpersMiddleware: Middleware = async (ctx, next) => {
     );
     ctx.res.statusCode = ctx.res.statusCode || 200;
     ctx.res.end(readFileSync(filePath));
+  };
+
+  ctx.render = (templateStr: string, data: Record<string, any> = {}) => {
+    const html = render(templateStr, data);
+    ctx.html(html);
+  };
+
+  ctx.renderFile = (filePath: string, data: Record<string, any> = {}) => {
+    const html = renderFile(filePath, data);
+    ctx.html(html);
   };
 
   await next();

@@ -39,7 +39,8 @@ export interface Context {
   redirect: (url: string, status?: number) => void;
   cookie: (name: string, value: string, options?: CookieOptions) => void;
   download: (filePath: string, filename?: string) => void;
-  render: (templateName: string, data?: any) => void;
+  render: (template: string, data?: Record<string, any>) => void;
+  renderFile: (filePath: string, data?: Record<string, any>) => void;
 }
 
 /**

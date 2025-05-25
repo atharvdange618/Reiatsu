@@ -235,3 +235,11 @@ export interface RequestIdOptions {
    */
   responseHeader?: string;
 }
+
+export interface CacheEntry {
+  timestamp: number;
+  ttl: number; // milliseconds
+  statusCode: number;
+  headers: Record<string, string>;
+  body: Buffer | string;
+}

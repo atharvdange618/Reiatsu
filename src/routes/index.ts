@@ -6,6 +6,7 @@ import { privateHandler } from "../handlers/privateHandler";
 import { queryHandler } from "../handlers/queryHandler";
 import { createUserHandler, getUserHandler } from "../handlers/userHandler";
 import { authMiddleware } from "../middleware/auth";
+import { cache } from "../middleware/cache";
 import { createCorsMiddleware } from "../middleware/cors";
 import { getRequestId } from "../middleware/requestId";
 import { Context } from "../types/http";
@@ -30,6 +31,12 @@ router.get("/private", authMiddleware, privateHandler);
 router.post("/echo", echoHandler);
 router.get("/search", queryHandler);
 router.post("/submit-form", formHandler);
+
+router.get("/expensive", cache(30), async (ctx: Context) => {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  const now = new Date().toISOString();
+  ctx.status(200).json({ servedAt: now });
+});
 
 router.get("/render-ejs", async (ctx: Context) => {
   await ctx.renderFile("index.ejs", {

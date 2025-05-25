@@ -1,0 +1,20 @@
+meta {
+  name: Test for request helpers
+  type: http
+  seq: 16
+}
+
+get {
+  url: http://localhost:3000/info?myname=atharv
+  body: none
+  auth: inherit
+}
+
+params:query {
+  myname: atharv
+}
+
+headers {
+  Content-Type: application/json
+  Cookie: test=hello world
+}

@@ -8,6 +8,7 @@ import {
   devLoggerMiddleware,
 } from "./middleware/logger";
 import { createRateLimiter } from "./middleware/rateLimiter";
+import { requestHelpersMiddleware } from "./middleware/requestHelpers";
 import { createRequestIdMiddleware } from "./middleware/requestId";
 import { createRequestSizeLimiter } from "./middleware/requestSize";
 import { createTimeoutMiddleware } from "./middleware/requestTimeout";
@@ -20,6 +21,7 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 
 use(errorHandlerMiddleware);
 use(responseHelpersMiddleware);
+use(requestHelpersMiddleware);
 
 // Core middleware
 use(createTimeoutMiddleware(30000)); // 30 second timeout
@@ -81,6 +83,7 @@ export { serve } from "./core/server";
 export { router, use } from "./core/router";
 
 // Middleware
+export { requestHelpersMiddleware } from "./middleware/requestHelpers";
 export { responseHelpersMiddleware } from "./middleware/responseHelpers";
 export { bodyParserMiddleware } from "./middleware/bodyParser";
 export { corsPresets } from "./middleware/cors";

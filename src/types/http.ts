@@ -12,16 +12,45 @@ export type QueryParams = Record<string, string | string[]>;
 
 /**
  * A shared context object passed to all route handlers.
- * Contains:
- * - `req`: the raw HTTP request
- * - `res`: the raw HTTP response
- * - `params`: dynamic route parameters
- * - `body`: parsed request body
- * - `query`: parsed query parameters
- * - `requestId`: unique identifier for this request
- * - `status`: helper function to set response status code
- * - `json`: helper function to send JSON response
- * - `redirect`: helper function to redirect to another URL
+ * Encapsulates the HTTP request and response, along with useful
+ * parsed data and helper methods to simplify handling requests and
+ * crafting responses.
+ *
+ * Properties:
+ * - `req`: The original raw HTTP IncomingMessage request object.
+ * - `res`: The raw ServerResponse object for sending responses.
+ * - `params`: Parsed dynamic route parameters extracted from the URL.
+ * - `body`: Parsed request body, typically JSON or form data (optional).
+ * - `query`: Parsed URL query parameters (optional).
+ * - `requestId`: A unique identifier assigned to each request (optional).
+ *
+ * Response Helper Methods:
+ * - `status(code)`: Sets the HTTP status code and returns the context for chaining.
+ * - `json(data)`: Sends a JSON response with the given data.
+ * - `send(body, type)`: Sends a raw response body with an optional Content-Type header.
+ * - `html(body)`: Sends an HTML response.
+ * - `text(body)`: Sends a plain text response.
+ * - `xml(body)`: Sends an XML response.
+ * - `redirect(url, status)`: Redirects the client to the specified URL with an optional status code (default 302).
+ * - `cookie(name, value, options)`: Sets a cookie on the response with optional settings.
+ * - `download(filePath, filename)`: Initiates a file download with an optional filename.
+ * - `render(template, data)`: Renders a view template with optional data and sends the output.
+ * - `renderFile(filePath, data)`: Renders a template file directly with optional data.
+ *
+ * Request Helper Properties and Methods:
+ * - `get(name)`: Retrieves the value of a request header by name.
+ * - `header(name)`: Alias for `get`, retrieves header value.
+ * - `hasHeader(name)`: Checks if a header is present on the request.
+ * - `is(type)`: Checks if the request's Content-Type matches the given MIME type.
+ * - `ip`: The client's IP address.
+ * - `protocol`: The protocol used for the request (e.g., 'http' or 'https').
+ * - `secure`: Boolean indicating if the request was made over HTTPS.
+ * - `hostname`: The hostname portion of the URL.
+ * - `subdomains`: An array of subdomains parsed from the hostname.
+ * - `cookies`: Parsed cookies sent with the request.
+ * - `path`: The URL path of the request.
+ * - `originalUrl`: The full original URL requested.
+ * - `method`: The HTTP method (GET, POST, etc.).
  */
 export interface Context {
   req: IncomingMessage;
@@ -30,6 +59,8 @@ export interface Context {
   body?: any;
   query?: QueryParams;
   requestId?: string;
+
+  // Response Helpers
   status: (code: number) => Context;
   json: (data: unknown) => void;
   send: (body: string | Buffer, type?: string) => void;
@@ -41,6 +72,21 @@ export interface Context {
   download: (filePath: string, filename?: string) => void;
   render: (template: string, data?: Record<string, any>) => void;
   renderFile: (filePath: string, data?: Record<string, any>) => void;
+
+  // Request Helpers
+  get: (name: string) => string | undefined;
+  header: (name: string) => string | undefined;
+  hasHeader: (name: string) => boolean;
+  is: (type: string) => boolean;
+  ip: string;
+  protocol: string;
+  secure: boolean;
+  hostname: string;
+  subdomains: string[];
+  cookies: Record<string, string>;
+  path: string;
+  originalUrl: string;
+  method: string;
 }
 
 /**

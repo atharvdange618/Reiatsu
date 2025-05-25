@@ -43,6 +43,20 @@ router.get("/inline", async (ctx: Context) => {
   ctx.render(tpl, { title: "Inline Render" });
 });
 
+router.get("/info", async (ctx: Context) => {
+  if (ctx.is("json")) {
+    ctx.json({
+      ip: ctx.ip,
+      protocol: ctx.protocol,
+      userAgent: ctx.get("User-Agent"),
+      query: ctx.query,
+      cookies: ctx.cookies,
+    });
+  } else {
+    ctx.text("Expected JSON request");
+  }
+});
+
 router.get("/me", (ctx: Context) => {
   ctx.cookie("session", "abcd1234", { httpOnly: true, maxAge: 3600 });
   ctx.status(200).json({ hello: "world" });

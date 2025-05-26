@@ -1,6 +1,6 @@
 {
   "name": "reiatsu",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A minimal TypeScript HTTP server framework, built from first principles.",
   "keywords": [
     "http",

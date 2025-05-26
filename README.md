@@ -95,10 +95,16 @@ serve(3000);
 import { use } from "./src/core/router";
 import { loggerMiddleware } from "./src/middleware/logger";
 import { corsMiddleware } from "./src/middleware/cors";
+import { cacheMiddleware } from "./src/middleware/cache";
 
 // Global middleware
 use(loggerMiddleware);
 use(corsMiddleware);
+
+// Per-route cache middleware
+router.get("/public-data", cacheMiddleware(60), (ctx) => {
+  ctx.status(200).json({ message: "This response is cached for 60 seconds" });
+});
 
 // Route-specific middleware
 router.get("/protected", authMiddleware, (ctx) => {
@@ -130,18 +136,39 @@ interface Context {
   body?: any;
   query?: QueryParams;
   requestId?: string;
-  status: (code: number): Context;
-  json: (data: unknown): void;
-  send: (body: string | Buffer, type?: string): void;
-  html: (body: string): void;
-  text: (body: string): void;
-  xml: (body: string): void;
-  redirect: (url: string, status?: number): void;
-  cookie: (name: string, value: string, options?: CookieOptions): void;
-  download: (filePath: string, filename?: string): void;
-  render: (templateName: string, data?: any): void;
+
+  // Response Helpers
+  status: (code: number) => Context;
+  json: (data: unknown) => void;
+  send: (body: string | Buffer, type?: string) => void;
+  html: (body: string) => void;
+  text: (body: string) => void;
+  xml: (body: string) => void;
+  redirect: (url: string, status?: number) => void;
+  cookie: (name: string, value: string, options?: CookieOptions) => void;
+  download: (filePath: string, filename?: string) => void;
+  render: (template: string, data?: Record<string, any>) => void;
+  renderFile: (filePath: string, data?: Record<string, any>) => void;
+
+  // Request Helpers
+  get: (name: string) => string | undefined;
+  header: (name: string) => string | undefined;
+  hasHeader: (name: string) => boolean;
+  is: (type: string) => boolean;
+  ip: string;
+  protocol: string;
+  secure: boolean;
+  hostname: string;
+  subdomains: string[];
+  cookies: Record<string, string>;
+  path: string;
+  originalUrl: string;
+  method: string;
 }
 ```
+
+- Response helpers like `status`, `json`, `send`, `html`, `text`, `xml`, `redirect`, `cookie`, `download`, `render`, and `renderFile` simplify crafting responses, including EJS template rendering.
+- Request helpers and properties like `get`, `header`, `hasHeader`, `is`, `ip`, `protocol`, `secure`, `hostname`, `subdomains`, `cookies`, `path`, `originalUrl`, and `method` make it easy to inspect and work with incoming requests.
 
 ### Router Methods
 
@@ -214,6 +241,19 @@ import { serveStatic } from "./src/middleware/static";
 
 use(serveStatic("public"));
 ```
+
+#### Cache Middleware
+
+```typescript
+import { cacheMiddleware } from "./src/middleware/cache";
+
+// Per-route cache for 30 seconds
+router.get("/api/data", cacheMiddleware(30), (ctx) => {
+  ctx.status(200).json({ data: "Cached data" });
+});
+```
+
+The `cacheMiddleware(ttlSeconds)` enables per-route caching. Responses are cached for the specified number of seconds (TTL).
 
 ## 🔍 Error Handling
 

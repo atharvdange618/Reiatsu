@@ -114,3 +114,20 @@ export { serveStatic } from "./middleware/static";
 
 // Types
 export type { Context, Handler, Middleware } from "./types/http";
+
+// Utilities
+export * from "./utils/asyncHandler";
+export * from "./utils/bufferRequest";
+export * from "./utils/context";
+export * from "./utils/mime";
+export * from "./utils/parseMultipartFormData";
+export * from "./utils/saveFileToDisk";
+export * from "./utils/validation";
+
+// Errors
+export * from "./errors/AppError";
+
+// Auth helpers
+export * from "./auth/jwt";
+export * from "./auth/types";
+export * from "./auth/utils";

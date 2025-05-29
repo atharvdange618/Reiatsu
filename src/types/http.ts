@@ -1,4 +1,5 @@
 import { IncomingMessage, ServerResponse } from "http";
+import { UserPayload } from "../auth/types";
 
 /**
  * Type for extracted route parameters.
@@ -60,6 +61,10 @@ export interface Context {
   files?: UploadedFile[];
   query?: QueryParams;
   requestId?: string;
+
+  // Authentication state
+  isAuthenticated?: boolean;
+  user?: UserPayload;
 
   // Response Helpers
   status: (code: number) => Context;

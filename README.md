@@ -1,132 +1,66 @@
 # Reiatsu
 
-A minimal, type-safe HTTP server framework built from first principles using pure Node.js.
+A minimal, type-safe HTTP server framework for Node.js, built from first principles using only Node.js core modules. Reiatsu is designed for simplicity, performance, and modern web development—no dependencies, fully typed, and production-ready.
 
-Reiatsu is designed to be a lightweight, understandable, and production-ready framework for building HTTP servers in Node.js. Built entirely using Node.js built-in modules, Reiatsu provides everything you need for modern web application development while maintaining simplicity and performance.
+---
+
+## 🚀 Installation
+
+Install Reiatsu from npm:
+
+```bash
+npm i reiatsu
+```
+
+---
 
 ## ✨ Features
 
-### 🚀 Core Framework
+- **Pure Node.js HTTP**: Built on Node.js's `http` module for maximum performance
+- **Zero Dependencies**: No external packages—just Node.js
+- **TypeScript First**: Fully typed, with comprehensive TypeScript support
+- **Advanced Routing**: Dynamic, parameterized, and wildcard routes
+- **Flexible Middleware**: Global and per-route, with async/await support
+- **Request/Response Helpers**: Modern, chainable helpers for clean handler logic
+- **Built-in Middleware**: CORS, rate limiting, logging, security headers, static file serving, body parsing, and more
+- **Security & Error Handling**: Centralized error handling, custom error classes, request ID tracking, and input validation
+- **Production Ready**: Environment-specific optimizations, security best practices, and detailed logging
 
-- **Pure Node.js HTTP**: Leveraging Node.js's built-in `http` module for maximum performance
-- **Zero Dependencies**: No external packages - only Node.js built-in modules
-- **TypeScript First**: Fully typed with comprehensive TypeScript support
-- **Production Ready**: Environment-specific configurations and optimizations
+---
 
-### 🛣️ Advanced Routing
-
-- **Dynamic Route Matching**: Support for parameterized routes (e.g., `/user/:id`)
-- **Expressive API**: Clean route registration with `router.get()`, `router.post()`, etc.
-- **All HTTP Methods**: Built-in support for GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD
-- **Query Parameter Parsing**: Automatic extraction and parsing of URL query parameters
-- **Wildcard Routes**: Support for catch-all routes with `*`
-- **Semantic Parameter Validation**: Built-in regex enhancements for route parameters, including date constraints that validate `YYYY-MM-DD` ranges (months `01–12`, days `01–31`)
-
-### 🔧 Comprehensive Middleware System
-
-- **Global & Route-Specific**: Flexible middleware execution with proper async/await support
-- **Request/Response Helpers**: Built-in methods like `.status()`, `.json()`, `.redirect()` for clean handler logic
-- **Body Parsing**: JSON and URL-encoded form data parsing
-- **CORS Support**: Configurable CORS with development and production presets
-- **Request Logging**: Detailed request/response logging with customizable formats
-- **Rate Limiting**: Built-in rate limiting with configurable windows
-- **Security Headers**: Automatic security headers (XSS, CSRF, etc.)
-- **Request Timeouts**: Configurable request timeout handling
-- **Request Size Limiting**: Protection against oversized requests
-- **Static File Serving**: Secure static file serving with path traversal protection
-
-### 🔒 Security & Error Handling
-
-- **Custom Error Classes**: Structured error handling with operational error detection
-- **Centralized Error Handling**: Automatic error catching and formatting
-- **Request ID Tracking**: Unique request IDs for debugging and logging
-- **Input Validation**: Built-in validation utilities for common use cases
-- **Security Best Practices**: OWASP-compliant security headers and protections
-
-### 🛠️ Developer Experience
-
-- **Detailed Logging**: Request/response logging with colorized output for development
-- **Environment Detection**: Automatic development vs production behavior
-- **Type Safety**: Full TypeScript support with comprehensive type definitions
-- **Extensible Architecture**: Easy to extend with custom middleware and features
-- **Modern Response Helpers**: Chainable and composable helpers (`ctx.status().json()`) for clean and expressive route logic
-
-## 🚀 Quick Start
-
-### Installation
-
-```bash
-git clone https://github.com/atharvdange618/Reiatsu.git
-cd Reiatsu
-npm install
-```
-
-### Basic Usage
+## 🛣️ Quick Start
 
 ```typescript
-import { router } from "./src/core/router";
-import { serve } from "./src/core/server";
+import { router } from "reiatsu/core/router";
+import { serve } from "reiatsu/core/server";
 
-// Define routes
 router.get("/", (ctx) => {
   ctx.status(200).json({ message: "Hello, World!" });
 });
 
-router.get("/user/:id", (ctx) => {
-  const { id } = ctx.params;
-  ctx.status(200).json({ userId: id });
-});
-
-router.post("/users", (ctx) => {
-  const userData = ctx.body;
-  ctx.status(201).json({
-    message: "User created",
-    data: userData,
-  });
-});
-
-// Start server
 serve(3000);
 ```
 
-### Middleware Usage
+---
+
+## 🧩 Middleware Example
 
 ```typescript
-import { use } from "./src/core/router";
-import { loggerMiddleware } from "./src/middleware/logger";
-import { corsMiddleware } from "./src/middleware/cors";
-import { cacheMiddleware } from "./src/middleware/cache";
+import { use } from "reiatsu/core/router";
+import { loggerMiddleware } from "reiatsu/middleware/logger";
+import { corsMiddleware } from "reiatsu/middleware/cors";
 
-// Global middleware
 use(loggerMiddleware);
 use(corsMiddleware);
-
-// Per-route cache middleware
-router.get("/public-data", cacheMiddleware(60), (ctx) => {
-  ctx.status(200).json({ message: "This response is cached for 60 seconds" });
-});
-
-// Route-specific middleware
-router.get("/protected", authMiddleware, (ctx) => {
-  ctx.status(200).json({ message: "Protected route" });
-});
 ```
 
-### Environment Configuration
-
-```bash
-# Development
-NODE_ENV=development npm start
-
-# Production
-NODE_ENV=production npm start
-```
+---
 
 ## 📖 API Reference
 
 ### Context Object
 
-Every route handler receives a `Context` object with the following properties:
+Every route handler receives a `Context` object with helpers and request data:
 
 ```typescript
 interface Context {
@@ -136,8 +70,7 @@ interface Context {
   body?: any;
   query?: QueryParams;
   requestId?: string;
-
-  // Response Helpers
+  // Response helpers
   status: (code: number) => Context;
   json: (data: unknown) => void;
   send: (body: string | Buffer, type?: string) => void;
@@ -149,8 +82,7 @@ interface Context {
   download: (filePath: string, filename?: string) => void;
   render: (template: string, data?: Record<string, any>) => void;
   renderFile: (filePath: string, data?: Record<string, any>) => void;
-
-  // Request Helpers
+  // Request helpers
   get: (name: string) => string | undefined;
   header: (name: string) => string | undefined;
   hasHeader: (name: string) => boolean;
@@ -167,126 +99,75 @@ interface Context {
 }
 ```
 
-- Response helpers like `status`, `json`, `send`, `html`, `text`, `xml`, `redirect`, `cookie`, `download`, `render`, and `renderFile` simplify crafting responses, including EJS template rendering.
-- Request helpers and properties like `get`, `header`, `hasHeader`, `is`, `ip`, `protocol`, `secure`, `hostname`, `subdomains`, `cookies`, `path`, `originalUrl`, and `method` make it easy to inspect and work with incoming requests.
-
-### Router Methods
-
-```typescript
-router.get(path, ...middleware, handler);
-router.post(path, ...middleware, handler);
-router.put(path, ...middleware, handler);
-router.delete(path, ...middleware, handler);
-router.patch(path, ...middleware, handler);
-router.options(path, ...middleware, handler);
-router.head(path, ...middleware, handler);
-```
-
-### Global Middleware
-
-```typescript
-import { use } from "./src/core/router";
-
-use(middlewareFunction);
-```
+---
 
 ## 🛡️ Built-in Middleware
 
-### CORS
+- **CORS**
+- **Rate Limiting**
+- **Request Logging**
+- **Static File Serving**
+- **Cache Middleware**
+- **Security Headers**
+- **Request Size & Timeout**
+
+Example usage:
 
 ```typescript
-import { createCorsMiddleware, corsPresets } from "./src/middleware/cors";
+import { use } from "reiatsu/core/router";
+import { corsPresets } from "reiatsu/middleware/cors";
 
 use(corsPresets.development());
 use(corsPresets.production(["https://myapp.com"]));
-use(
-  createCorsMiddleware({
-    origin: ["https://trusted-site.com"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
+```
+
+---
+
+## 📦 File Upload & Download
+
+**Upload:**
+```typescript
+import { uploadMiddleware } from "reiatsu/middleware/upload";
+
+router.post(
+  "/upload",
+  uploadMiddleware({ dest: "uploads/" }),
+  async (ctx) => {
+    if (!ctx.files || ctx.files.length === 0) {
+      return ctx.status(400).json({ error: "No files uploaded" });
+    }
+    ctx.json({
+      message: "Files uploaded successfully",
+      files: ctx.files,
+      fields: ctx.body,
+    });
+  }
 );
 ```
 
-### Rate Limiting
-
+**Download:**
 ```typescript
-import { createRateLimiter } from "./src/middleware/rateLimiter";
-
-use(createRateLimiter(100, 15 * 60 * 1000));
-```
-
-### Request Logging
-
-```typescript
-import {
-  createLoggerMiddleware,
-  devLoggerMiddleware,
-} from "./src/middleware/logger";
-
-use(devLoggerMiddleware);
-use(
-  createLoggerMiddleware({
-    includeRequestId: true,
-    logBody: false,
-    logHeaders: false,
-  })
-);
-```
-
-### Static File Serving
-
-```typescript
-import { serveStatic } from "./src/middleware/static";
-
-use(serveStatic("public"));
-```
-
-#### Cache Middleware
-
-```typescript
-import { cacheMiddleware } from "./src/middleware/cache";
-
-// Per-route cache for 30 seconds
-router.get("/api/data", cacheMiddleware(30), (ctx) => {
-  ctx.status(200).json({ data: "Cached data" });
+router.get("/download/:filename", async (ctx) => {
+  let filePath = (ctx.query && ctx.query.path) || (ctx.body && ctx.body.path);
+  if (!filePath) {
+    filePath = `uploads/${ctx.params.filename}`;
+  }
+  ctx.download(filePath);
 });
 ```
 
-The `cacheMiddleware(ttlSeconds)` enables per-route caching. Responses are cached for the specified number of seconds (TTL).
-
-## 🔍 Error Handling
-
-```typescript
-import {
-  ValidationError,
-  NotFoundError,
-  AuthenticationError,
-} from "./src/errors/AppError";
-
-router.post("/users", async (ctx) => {
-  if (!ctx.body.email) {
-    throw new ValidationError("Email is required");
-  }
-
-  if (userNotFound) {
-    throw new NotFoundError("User");
-  }
-});
-```
+---
 
 ## 🧪 Input Validation
 
 ```typescript
-import { Validator } from "./src/utils/validation";
+import { Validator } from "reiatsu/utils/validation";
 
 router.post("/users", (ctx) => {
   const { name, email, age } = ctx.body;
-
   Validator.required(name, "Name");
   Validator.email(email);
   Validator.minLength(name, 2, "Name");
-
   if (age) {
     const validAge = Validator.isNumber(age, "Age");
     Validator.range(validAge, 0, 120, "Age");
@@ -294,9 +175,11 @@ router.post("/users", (ctx) => {
 });
 ```
 
-## 🚀 Production Deployment
+---
 
-### Environment Variables
+## 🏗️ Production Deployment
+
+Set environment variables:
 
 ```bash
 NODE_ENV=production
@@ -304,53 +187,27 @@ PORT=3000
 ALLOWED_ORIGINS=https://myapp.com,https://api.myapp.com
 ```
 
-### Production Features
+---
 
-- **Automatic Security Headers**
-- **Request Rate Limiting**
-- **Request Size Limiting**
-- **Request Timeouts**
-- **Structured Logging**
-- **Error Sanitization**
-
-## 📋 Development Roadmap
+## 📋 Roadmap
 
 - [ ] WebSocket support
 - [ ] Built-in caching layer
-- [ ] Database connection utilities
+- [ ] Database utilities
 - [ ] Session management
 - [ ] Template engine integration
 - [ ] API documentation generation
 - [ ] Performance monitoring
 - [ ] Health check endpoints
 
-## 🧪 Testing
-
-Testing framework is yet to be implemented.
+---
 
 ## 🤝 Contributing
 
-This is a learning project built from first principles. Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for new features
-4. Ensure TypeScript types are properly defined
-5. Submit a pull request
-
-## 📊 Why Reiatsu?
-
-- **Educational**
-- **Lightweight**
-- **Type-Safe**
-- **Production-Ready**
-- **Extensible**
-- **Modern**
-
-## 📄 License
-
-MIT License - feel free to use this project for learning, development, or production applications.
+Contributions are welcome! Please fork, create a feature branch, write tests, and submit a pull request.
 
 ---
 
-Built with ❤️ using pure Node.js and TypeScript
+## 📄 License
+
+MIT License. Built with ❤️ using pure Node.js and TypeScript.

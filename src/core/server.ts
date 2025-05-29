@@ -1,5 +1,5 @@
 import http from "http";
-import { router } from "./router";
+import { handleRequest } from "./router";
 
 /**
  * Starts the HTTP server using Node's built-in `http` module.
@@ -7,8 +7,16 @@ import { router } from "./router";
  */
 export function serve(port: number) {
   const server = http.createServer((req, res) => {
-    router.handle(req, res);
+    handleRequest(req, res).catch((err) => {
+      console.error("Unhandled error:", err);
+      if (!res.headersSent) {
+        res.statusCode = 500;
+        res.setHeader("Content-Type", "text/plain");
+        res.end("Internal Server Error");
+      }
+    });
   });
+
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
   });

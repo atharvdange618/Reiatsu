@@ -57,6 +57,7 @@ export interface Context {
   res: ServerResponse;
   params: RouteParams;
   body?: any;
+  files?: UploadedFile[];
   query?: QueryParams;
   requestId?: string;
 
@@ -242,4 +243,38 @@ export interface CacheEntry {
   statusCode: number;
   headers: Record<string, string>;
   body: Buffer | string;
+}
+
+export interface UploadedFile {
+  fieldname: string;
+  originalname: string;
+  mimetype: string;
+  size: number;
+  filename: string;
+  path: string;
+}
+
+export interface FileUploadOptions {
+  dest: string;
+  fieldName?: string;
+  uploadDir?: string;
+  maxFileSize?: number;
+  mimeTypes?: Record<string, string>;
+}
+
+export interface MultipartPart {
+  headers: string[];
+  name: string;
+  filename?: string;
+  contentType?: string;
+  data: Buffer;
+}
+
+export interface SaveFileOptions {
+  dest: string;
+  originalname: string;
+  data: Buffer;
+  maxFileSize?: number;
+  allowedMimeTypes?: string[];
+  mimetype: string;
 }

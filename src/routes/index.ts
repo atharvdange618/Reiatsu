@@ -1,16 +1,17 @@
 import { router } from "../core/router";
-import { echoHandler } from "../handlers/echoHandler";
-import { formHandler } from "../handlers/formHandler";
-import { helloHandler } from "../handlers/helloHandler";
-import { privateHandler } from "../handlers/privateHandler";
-import { queryHandler } from "../handlers/queryHandler";
-import { createUserHandler, getUserHandler } from "../handlers/userHandler";
+import {
+  AuthenticationError,
+  NotFoundError,
+  ValidationError,
+} from "../errors/AppError";
 import { authMiddleware } from "../middleware/auth";
 import { cache } from "../middleware/cache";
 import { createCorsMiddleware } from "../middleware/cors";
 import { getRequestId } from "../middleware/requestId";
+import { uploadMiddleware } from "../middleware/upload";
 import { Context } from "../types/http";
 import { asyncHandler } from "../utils/asyncHandler";
+import { Validator } from "../utils/validation";
 
 // const legacyRoutes: Route[] = [
 //   { method: "GET", path: "/", handler: helloHandler },
@@ -24,13 +25,118 @@ import { asyncHandler } from "../utils/asyncHandler";
 //   { method: "POST", path: "/echo", handler: echoHandler },
 // ];
 
-router.get("/", helloHandler);
-router.get("/user/:id", asyncHandler(getUserHandler));
-router.post("/user", asyncHandler(createUserHandler));
-router.get("/private", authMiddleware, privateHandler);
-router.post("/echo", echoHandler);
-router.get("/search", queryHandler);
-router.post("/submit-form", formHandler);
+router.get("/", (ctx: Context) => {
+  ctx.status(200).json({ message: "Hello, World from Reiatsu!" });
+});
+
+router.get(
+  "/user/:id",
+  asyncHandler(async (ctx) => {
+    const { id } = ctx.params;
+
+    if (!id) {
+      throw new ValidationError("User ID is required");
+    }
+
+    // Simulate user lookup
+    if (id === "nonexistent") {
+      throw new NotFoundError("User");
+    }
+
+    // Simulate authentication check
+    const authHeader = ctx.req.headers.authorization;
+    if (!authHeader) {
+      throw new AuthenticationError();
+    }
+
+    ctx.status(200).json({
+      success: true,
+      data: { id, name: "John Doe", email: "john@example.com" },
+    });
+  })
+);
+
+router.post(
+  "/user",
+  asyncHandler(async (ctx) => {
+    const { name, email, age } = ctx.body || {};
+
+    // Validation
+    Validator.required(name, "Name");
+    Validator.required(email, "Email");
+    Validator.email(email);
+    Validator.minLength(name, 2, "Name");
+    Validator.maxLength(name, 50, "Name");
+
+    if (age !== undefined) {
+      const validAge = Validator.isNumber(age, "Age");
+      Validator.range(validAge, 0, 120, "Age");
+    }
+
+    // Simulate user creation
+    const user = {
+      id: Math.random().toString(36).substr(2, 9),
+      name,
+      email,
+      age: age ? Number(age) : undefined,
+      createdAt: new Date().toISOString(),
+    };
+
+    ctx.status(201).json({
+      success: true,
+      data: user,
+    });
+  })
+);
+
+router.get("/private", authMiddleware, (ctx: Context) => {
+  ctx.status(200).json({ message: "Welcome to the private route!" });
+});
+
+router.post("/echo", (ctx: Context) => {
+  ctx.status(200).json({ youPosted: ctx.body });
+});
+
+router.get("/search", (ctx: Context) => {
+  ctx.status(200).json({ query: ctx.query });
+});
+
+router.post("/submit-form", (ctx: Context) => {
+  ctx.status(200).json({
+    message: "Form submission received",
+    formData: ctx.body,
+  });
+});
+
+router.post(
+  "/upload",
+  uploadMiddleware({ dest: "uploads/pins/" }),
+  async (ctx: Context) => {
+    if (!ctx.files || ctx.files.length === 0) {
+      return ctx.status(400).json({ error: "No files uploaded" });
+    }
+
+    ctx.json({
+      message: "Files uploaded successfully",
+      files: ctx.files.map((f) => ({
+        originalname: f.originalname,
+        filename: f.filename,
+        mimetype: f.mimetype,
+        size: f.size,
+        path: f.path,
+      })),
+      fields: ctx.body,
+    });
+  }
+);
+
+router.get("/download/:filename", async (ctx: Context) => {
+  let filePath = (ctx.query && ctx.query.path) || (ctx.body && ctx.body.path);
+  if (!filePath) {
+    filePath = `uploads/${ctx.params.filename}`;
+  }
+  ctx.download(filePath);
+});
 
 router.get("/expensive", cache(30), async (ctx: Context) => {
   await new Promise((resolve) => setTimeout(resolve, 1000));

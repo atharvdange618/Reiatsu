@@ -14,6 +14,10 @@ export const bodyParserMiddleware: Middleware = (ctx, next) => {
     return next();
   }
 
+  if (contentType.startsWith("multipart/form-data")) {
+    return next();
+  }
+
   return new Promise<void>((resolve, reject) => {
     let rawBody = "";
 

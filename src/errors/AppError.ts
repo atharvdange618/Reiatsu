@@ -57,3 +57,9 @@ export class RateLimitError extends AppError {
     super(message, 429, "RATE_LIMIT_ERROR", true);
   }
 }
+
+export class InternalServerError extends AppError {
+  constructor(message: string = "Internal server error", details?: any) {
+    super(message, 500, "INTERNAL_ERROR", false, details);
+  }
+}

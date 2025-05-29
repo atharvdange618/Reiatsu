@@ -192,3 +192,7 @@ methods.forEach((method) => {
     routes.push(route);
   };
 });
+
+export async function handleRequest(req: IncomingMessage, res: ServerResponse) {
+  await router.handle(req, res);
+}

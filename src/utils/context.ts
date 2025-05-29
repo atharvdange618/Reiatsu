@@ -21,6 +21,7 @@ export function createContext(
     params: {} as any,
     query,
     requestId: undefined,
+    files: [],
 
     // Response helpers
     status: (code: number) => {

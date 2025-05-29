@@ -2,6 +2,7 @@ import { use } from "./core/router";
 import { serve } from "./core/server";
 import { bodyParserMiddleware } from "./middleware/bodyParser";
 import { corsPresets } from "./middleware/cors";
+import { downloadHelperMiddleware } from "./middleware/download";
 import { errorHandlerMiddleware } from "./middleware/errorHandler";
 import {
   createLoggerMiddleware,
@@ -20,14 +21,10 @@ import { serveStatic } from "./middleware/static";
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 use(errorHandlerMiddleware);
+
+// Core helpers
 use(responseHelpersMiddleware);
 use(requestHelpersMiddleware);
-
-// Core middleware
-use(createTimeoutMiddleware(30000)); // 30 second timeout
-use(createRateLimiter(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
-use(createRequestSizeLimiter(2 * 1024 * 1024)); // 2MB limit
-use(createSecurityHeadersMiddleware()); // Security headers
 
 // Request ID tracking
 use(createRequestIdMiddleware());
@@ -41,6 +38,22 @@ if (isDevelopment) {
   const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
   use(corsPresets.production(allowedOrigins));
 }
+
+// Core middleware
+// Security headers
+use(createSecurityHeadersMiddleware());
+
+// Request timeout
+use(createTimeoutMiddleware(30000)); // 30 second timeout
+
+// Rate limiting
+use(createRateLimiter(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
+
+// Request size limit
+use(createRequestSizeLimiter(20 * 1024 * 1024)); // 20MB limit
+
+// Download helper
+use(downloadHelperMiddleware());
 
 // Logging
 use(

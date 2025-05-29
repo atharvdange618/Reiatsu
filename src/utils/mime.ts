@@ -1,4 +1,4 @@
-const mimeTypes: Record<string, string> = {
+export const mimeTypes: Record<string, string> = {
   ".html": "text/html",
   ".css": "text/css",
   ".js": "application/javascript",

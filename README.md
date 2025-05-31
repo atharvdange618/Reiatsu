@@ -31,8 +31,7 @@ npm i reiatsu
 ## 🛣️ Quick Start
 
 ```typescript
-import { router } from "reiatsu/core/router";
-import { serve } from "reiatsu/core/server";
+import { router, serve } from "reiatsu";
 
 router.get("/", (ctx) => {
   ctx.status(200).json({ message: "Hello, World!" });
@@ -46,9 +45,9 @@ serve(3000);
 ## 🧩 Middleware Example
 
 ```typescript
-import { use } from "reiatsu/core/router";
-import { loggerMiddleware } from "reiatsu/middleware/logger";
-import { corsMiddleware } from "reiatsu/middleware/cors";
+import { use, router } from "reiatsu";
+import { loggerMiddleware } from "reiatsu";
+import { corsMiddleware } from "reiatsu";
 
 use(loggerMiddleware);
 use(corsMiddleware);
@@ -118,8 +117,8 @@ interface Context {
 Example usage:
 
 ```typescript
-import { use } from "reiatsu/core/router";
-import { corsPresets } from "reiatsu/middleware/cors";
+import { use } from "reiatsu";
+import { corsPresets } from "reiatsu";
 
 use(corsPresets.development());
 use(corsPresets.production(["https://myapp.com"]));
@@ -132,7 +131,7 @@ use(corsPresets.production(["https://myapp.com"]));
 **Upload:**
 
 ```typescript
-import { uploadMiddleware } from "reiatsu/middleware/upload";
+import { uploadMiddleware } from "reiatsu";
 
 router.post("/upload", uploadMiddleware({ dest: "uploads/" }), async (ctx) => {
   if (!ctx.files || ctx.files.length === 0) {
@@ -163,7 +162,7 @@ router.get("/download/:filename", async (ctx) => {
 ## 🧪 Input Validation
 
 ```typescript
-import { Validator } from "reiatsu/utils/validation";
+import { Validator } from "reiatsu";
 
 router.post("/users", (ctx) => {
   const { name, email, age } = ctx.body;
@@ -186,10 +185,10 @@ Reiatsu provides built-in JWT authentication middleware and helpers for protecti
 **JWT Middleware Example:**
 
 ```typescript
-import { jwtAuthMiddleware } from "reiatsu/middleware/auth";
+import { jwtMiddleware } from "reiatsu";
 
 // Protect all routes below this middleware
-use(jwtAuthMiddleware({ secret: process.env.JWT_SECRET }));
+use(jwtMiddleware({ secret: process.env.JWT_SECRET }));
 
 router.get("/profile", (ctx) => {
   // ctx.user is set if JWT is valid
@@ -200,19 +199,19 @@ router.get("/profile", (ctx) => {
 **Custom Auth Logic:**
 
 ```typescript
-import { jwtSign, jwtVerify } from "reiatsu/auth/jwt";
+import { signJWT, decodeJWT } from "reiatsu";
 
 // Sign a JWT
-const token = jwtSign({ userId: 123 }, process.env.JWT_SECRET);
+const token = signJWT({ userId: 123 }, process.env.JWT_SECRET);
 
 // Verify a JWT
-const payload = jwtVerify(token, process.env.JWT_SECRET);
+const payload = decodeJWT(token, process.env.JWT_SECRET);
 ```
 
 **Per-Route Protection:**
 
 ```typescript
-import { jwtAuthMiddleware } from "reiatsu/middleware/auth";
+import { jwtAuthMiddleware } from "reiatsu";
 
 router.get(
   "/admin",

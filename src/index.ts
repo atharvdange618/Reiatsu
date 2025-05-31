@@ -18,6 +18,7 @@ export { createRequestSizeLimiter } from "./middleware/requestSize";
 export { createTimeoutMiddleware } from "./middleware/requestTimeout";
 export { createSecurityHeadersMiddleware } from "./middleware/security";
 export { serveStatic } from "./middleware/static";
+export { uploadMiddleware } from "./middleware/upload";
 export { downloadHelperMiddleware } from "./middleware/download";
 
 // Types

@@ -1,7 +1,7 @@
 import { Middleware } from "../types/http";
-import { parse as parseCookie } from "cookie";
 import { parse as parseUrl } from "url";
 import type { TLSSocket } from "tls";
+import { parseCookie } from "../utils/parseCookie";
 
 export const requestHelpersMiddleware: Middleware = async (ctx, next) => {
   const { req } = ctx;

@@ -1,6 +1,6 @@
 # Reiatsu
 
-A minimal, type-safe HTTP server framework for Node.js, built from first principles using only Node.js core modules. Reiatsu is designed for simplicity, performance, and modern web development—no dependencies, fully typed, and production-ready.
+A minimal, type-safe HTTP server framework for Node.js, built from first principles using only Node.js core modules. Reiatsu is designed for simplicity, performance, and modern web development no dependencies, fully typed, and production-ready.
 
 ---
 
@@ -17,7 +17,7 @@ npm i reiatsu
 ## ✨ Features
 
 - **Pure Node.js HTTP**: Built on Node.js's `http` module for maximum performance
-- **Zero Dependencies**: No external packages—just Node.js
+- **Zero Dependencies**: No external packages just Node.js
 - **TypeScript First**: Fully typed, with comprehensive TypeScript support
 - **Advanced Routing**: Dynamic, parameterized, and wildcard routes
 - **Flexible Middleware**: Global and per-route, with async/await support
@@ -70,6 +70,9 @@ interface Context {
   body?: any;
   query?: QueryParams;
   requestId?: string;
+  // Authentication state
+  isAuthenticated?: boolean;
+  user?: UserPayload;
   // Response helpers
   status: (code: number) => Context;
   json: (data: unknown) => void;
@@ -110,6 +113,7 @@ interface Context {
 - **Cache Middleware**
 - **Security Headers**
 - **Request Size & Timeout**
+- **JWT Authentication Middleware**
 
 Example usage:
 
@@ -126,26 +130,24 @@ use(corsPresets.production(["https://myapp.com"]));
 ## 📦 File Upload & Download
 
 **Upload:**
+
 ```typescript
 import { uploadMiddleware } from "reiatsu/middleware/upload";
 
-router.post(
-  "/upload",
-  uploadMiddleware({ dest: "uploads/" }),
-  async (ctx) => {
-    if (!ctx.files || ctx.files.length === 0) {
-      return ctx.status(400).json({ error: "No files uploaded" });
-    }
-    ctx.json({
-      message: "Files uploaded successfully",
-      files: ctx.files,
-      fields: ctx.body,
-    });
+router.post("/upload", uploadMiddleware({ dest: "uploads/" }), async (ctx) => {
+  if (!ctx.files || ctx.files.length === 0) {
+    return ctx.status(400).json({ error: "No files uploaded" });
   }
-);
+  ctx.json({
+    message: "Files uploaded successfully",
+    files: ctx.files,
+    fields: ctx.body,
+  });
+});
 ```
 
 **Download:**
+
 ```typescript
 router.get("/download/:filename", async (ctx) => {
   let filePath = (ctx.query && ctx.query.path) || (ctx.body && ctx.body.path);
@@ -177,6 +179,54 @@ router.post("/users", (ctx) => {
 
 ---
 
+## 🔐 Authentication & Authorization
+
+Reiatsu provides built-in JWT authentication middleware and helpers for protecting routes and managing user sessions securely.
+
+**JWT Middleware Example:**
+
+```typescript
+import { jwtAuthMiddleware } from "reiatsu/middleware/auth";
+
+// Protect all routes below this middleware
+use(jwtAuthMiddleware({ secret: process.env.JWT_SECRET }));
+
+router.get("/profile", (ctx) => {
+  // ctx.user is set if JWT is valid
+  ctx.json({ user: ctx.user });
+});
+```
+
+**Custom Auth Logic:**
+
+```typescript
+import { jwtSign, jwtVerify } from "reiatsu/auth/jwt";
+
+// Sign a JWT
+const token = jwtSign({ userId: 123 }, process.env.JWT_SECRET);
+
+// Verify a JWT
+const payload = jwtVerify(token, process.env.JWT_SECRET);
+```
+
+**Per-Route Protection:**
+
+```typescript
+import { jwtAuthMiddleware } from "reiatsu/middleware/auth";
+
+router.get(
+  "/admin",
+  jwtAuthMiddleware({ secret: process.env.JWT_SECRET, required: true }),
+  (ctx) => {
+    ctx.json({ message: "Welcome, admin!", user: ctx.user });
+  }
+);
+```
+
+- `ctx.user` is automatically populated if the JWT is valid.
+
+---
+
 ## 🏗️ Production Deployment
 
 Set environment variables:
@@ -186,19 +236,6 @@ NODE_ENV=production
 PORT=3000
 ALLOWED_ORIGINS=https://myapp.com,https://api.myapp.com
 ```
-
----
-
-## 📋 Roadmap
-
-- [ ] WebSocket support
-- [ ] Built-in caching layer
-- [ ] Database utilities
-- [ ] Session management
-- [ ] Template engine integration
-- [ ] API documentation generation
-- [ ] Performance monitoring
-- [ ] Health check endpoints
 
 ---
 

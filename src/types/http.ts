@@ -2,11 +2,6 @@ import { IncomingMessage, ServerResponse } from "http";
 import { UserPayload } from "../auth/types";
 
 /**
- * Type for extracted route parameters.
- */
-export type RouteParams = Record<string, string>;
-
-/**
  * Type for extracted query parameters.
  */
 export type QueryParams = Record<string, string | string[]>;
@@ -53,10 +48,12 @@ export type QueryParams = Record<string, string | string[]>;
  * - `originalUrl`: The full original URL requested.
  * - `method`: The HTTP method (GET, POST, etc.).
  */
-export interface Context {
+export type Context<
+  TParams extends Record<string, string> = Record<string, string>
+> = {
   req: IncomingMessage;
   res: ServerResponse;
-  params: RouteParams;
+  params: TParams;
   body?: any;
   files?: UploadedFile[];
   query?: QueryParams;
@@ -67,7 +64,7 @@ export interface Context {
   user?: UserPayload;
 
   // Response Helpers
-  status: (code: number) => Context;
+  status: (code: number) => Context<TParams>;
   json: (data: unknown) => void;
   send: (body: string | Buffer, type?: string) => void;
   html: (body: string) => void;
@@ -93,13 +90,15 @@ export interface Context {
   path: string;
   originalUrl: string;
   method: string;
-}
+};
 
 /**
  * Function signature for route handlers.
  * Accepts a Context object, returns void or Promise<void>.
  */
-export type Handler = (ctx: Context) => void | Promise<void>;
+export type Handler<Path extends string = string> = (
+  ctx: Context<ExtractRouteParams<Path>>
+) => Promise<void> | void;
 
 /**
  * Function signature for route middlewares.
@@ -283,3 +282,23 @@ export interface SaveFileOptions {
   allowedMimeTypes?: string[];
   mimetype: string;
 }
+
+export type ExtractRouteParams<Path extends string> = Path extends `${string}*`
+  ? ExtractRouteParamsWithWildcard<Path>
+  : ExtractRouteParamsWithoutWildcard<Path>;
+
+// Handle routes with wildcards
+type ExtractRouteParamsWithWildcard<Path extends string> =
+  ExtractRouteParamsWithoutWildcard<Path> & { wildcard: string };
+
+// Handle routes without wildcards
+type ExtractRouteParamsWithoutWildcard<Path extends string> =
+  Path extends `${infer Start}:${infer Param}/${infer Rest}`
+    ? Param extends `${infer Name}(${string})`
+      ? { [K in Name]: string } & ExtractRouteParamsWithoutWildcard<`/${Rest}`>
+      : { [K in Param]: string } & ExtractRouteParamsWithoutWildcard<`/${Rest}`>
+    : Path extends `${infer Start}:${infer Param}`
+    ? Param extends `${infer Name}(${string})`
+      ? { [K in Name]: string }
+      : { [K in Param]: string }
+    : {};

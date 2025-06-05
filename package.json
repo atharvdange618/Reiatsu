@@ -1,15 +1,16 @@
 {
   "name": "reiatsu",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A minimal TypeScript HTTP server framework, built from first principles.",
   "keywords": [
     "http",
-    "server",
+    "webserver",
     "framework",
     "nodejs",
     "typescript",
     "router",
-    "middleware"
+    "middleware",
+    "microframework"
   ],
   "homepage": "https://github.com/atharvdange618/Reiatsu#readme",
   "bugs": {

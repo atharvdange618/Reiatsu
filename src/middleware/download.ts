@@ -1,8 +1,8 @@
 import { createReadStream, existsSync, statSync } from "fs";
 import { basename, extname } from "path";
-import { Context } from "../types/http";
 import { InternalServerError, NotFoundError } from "../errors/AppError";
 import { mimeTypes } from "../utils/mime";
+import { Context } from "../core/context";
 
 export function downloadHelperMiddleware() {
   return async (ctx: Context, next: Function) => {

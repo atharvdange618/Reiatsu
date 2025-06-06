@@ -1,7 +1,11 @@
-import type { Middleware, Context } from "../types/http";
+import { Context } from "../core/context";
+import type { Middleware } from "../types/http";
 import type { JWTAuthOptions, UserPayload } from "./types";
 import { extractTokenFromHeader, verifyHMAC } from "./utils";
-import { createHmac as nodeCreateHmac, timingSafeEqual as nodeTimingSafeEqual } from "crypto";
+import {
+  createHmac as nodeCreateHmac,
+  timingSafeEqual as nodeTimingSafeEqual,
+} from "crypto";
 
 export function jwtMiddleware(options: JWTAuthOptions): Middleware {
   const {
@@ -73,7 +77,10 @@ export function signJWT(
 
   const base64Header = base64UrlEncode(JSON.stringify(header));
   const base64Payload = base64UrlEncode(JSON.stringify(data));
-  const signature = hmacSha256Base64Url(`${base64Header}.${base64Payload}`, secret);
+  const signature = hmacSha256Base64Url(
+    `${base64Header}.${base64Payload}`,
+    secret
+  );
 
   return `${base64Header}.${base64Payload}.${signature}`;
 }

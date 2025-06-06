@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { Middleware, RequestIdOptions } from "../types/http";
-
+import { RequestIdContext } from "../types/types";
 
 const DEFAULT_REQUEST_ID_OPTIONS: Required<RequestIdOptions> = {
   header: "x-request-id",
@@ -15,7 +15,7 @@ const DEFAULT_REQUEST_ID_OPTIONS: Required<RequestIdOptions> = {
  */
 export const createRequestIdMiddleware = (
   options: RequestIdOptions = {}
-): Middleware => {
+): Middleware<RequestIdContext> => {
   const config = { ...DEFAULT_REQUEST_ID_OPTIONS, ...options };
 
   return async (ctx, next) => {
@@ -66,7 +66,8 @@ function generateRequestId(): string {
 /**
  * Convenience middleware with default options
  */
-export const requestIdMiddleware: Middleware = createRequestIdMiddleware();
+export const requestIdMiddleware: Middleware<RequestIdContext> =
+  createRequestIdMiddleware();
 
 /**
  * Utility function to get request ID from context

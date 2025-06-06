@@ -1,5 +1,4 @@
-import { IncomingMessage, ServerResponse } from "http";
-import { UserPayload } from "../auth/types";
+import { Context } from "../core/context";
 
 /**
  * Type for extracted query parameters.
@@ -7,123 +6,8 @@ import { UserPayload } from "../auth/types";
 export type QueryParams = Record<string, string | string[]>;
 
 /**
- * A shared context object passed to all route handlers.
- * Encapsulates the HTTP request and response, along with useful
- * parsed data and helper methods to simplify handling requests and
- * crafting responses.
- *
- * Properties:
- * - `req`: The original raw HTTP IncomingMessage request object.
- * - `res`: The raw ServerResponse object for sending responses.
- * - `params`: Parsed dynamic route parameters extracted from the URL.
- * - `body`: Parsed request body, typically JSON or form data (optional).
- * - `query`: Parsed URL query parameters (optional).
- * - `requestId`: A unique identifier assigned to each request (optional).
- *
- * Response Helper Methods:
- * - `status(code)`: Sets the HTTP status code and returns the context for chaining.
- * - `json(data)`: Sends a JSON response with the given data.
- * - `send(body, type)`: Sends a raw response body with an optional Content-Type header.
- * - `html(body)`: Sends an HTML response.
- * - `text(body)`: Sends a plain text response.
- * - `xml(body)`: Sends an XML response.
- * - `redirect(url, status)`: Redirects the client to the specified URL with an optional status code (default 302).
- * - `cookie(name, value, options)`: Sets a cookie on the response with optional settings.
- * - `download(filePath, filename)`: Initiates a file download with an optional filename.
- * - `render(template, data)`: Renders a view template with optional data and sends the output.
- * - `renderFile(filePath, data)`: Renders a template file directly with optional data.
- *
- * Request Helper Properties and Methods:
- * - `get(name)`: Retrieves the value of a request header by name.
- * - `header(name)`: Alias for `get`, retrieves header value.
- * - `hasHeader(name)`: Checks if a header is present on the request.
- * - `is(type)`: Checks if the request's Content-Type matches the given MIME type.
- * - `ip`: The client's IP address.
- * - `protocol`: The protocol used for the request (e.g., 'http' or 'https').
- * - `secure`: Boolean indicating if the request was made over HTTPS.
- * - `hostname`: The hostname portion of the URL.
- * - `subdomains`: An array of subdomains parsed from the hostname.
- * - `cookies`: Parsed cookies sent with the request.
- * - `path`: The URL path of the request.
- * - `originalUrl`: The full original URL requested.
- * - `method`: The HTTP method (GET, POST, etc.).
+ * HTTP method types.
  */
-export type Context<
-  TParams extends Record<string, string> = Record<string, string>
-> = {
-  req: IncomingMessage;
-  res: ServerResponse;
-  params: TParams;
-  body?: any;
-  files?: UploadedFile[];
-  query?: QueryParams;
-  requestId?: string;
-
-  // Authentication state
-  isAuthenticated?: boolean;
-  user?: UserPayload;
-
-  // Response Helpers
-  status: (code: number) => Context<TParams>;
-  json: (data: unknown) => void;
-  send: (body: string | Buffer, type?: string) => void;
-  html: (body: string) => void;
-  text: (body: string) => void;
-  xml: (body: string) => void;
-  redirect: (url: string, status?: number) => void;
-  cookie: (name: string, value: string, options?: CookieOptions) => void;
-  download: (filePath: string, filename?: string) => void;
-  render: (template: string, data?: Record<string, any>) => void;
-  renderFile: (filePath: string, data?: Record<string, any>) => void;
-
-  // Request Helpers
-  get: (name: string) => string | undefined;
-  header: (name: string) => string | undefined;
-  hasHeader: (name: string) => boolean;
-  is: (type: string) => boolean;
-  ip: string;
-  protocol: string;
-  secure: boolean;
-  hostname: string;
-  subdomains: string[];
-  cookies: Record<string, string>;
-  path: string;
-  originalUrl: string;
-  method: string;
-};
-
-/**
- * Function signature for route handlers.
- * Accepts a Context object, returns void or Promise<void>.
- */
-export type Handler<Path extends string = string> = (
-  ctx: Context<ExtractRouteParams<Path>>
-) => Promise<void> | void;
-
-/**
- * Function signature for route middlewares.
- * Accepts a Context object and next, returns void or Promise<void>.
- */
-export type Middleware = (
-  ctx: Context,
-  next: () => void | Promise<void>
-) => void | Promise<void>;
-
-/**
- * Represents a route definition.
- * Contains:
- * - `method`: HTTP verb (GET, POST, etc.)
- * - `path`: URL pattern (e.g., /user/:id)
- * - `handler`: function to run when the route matches
- * - `middlewares`: optional array of middlewares for this route
- */
-export interface Route {
-  method: string;
-  path: string;
-  handler: Handler;
-  middlewares?: Middleware[];
-}
-
 export type HTTPMethod =
   | "GET"
   | "POST"
@@ -132,6 +16,69 @@ export type HTTPMethod =
   | "PATCH"
   | "OPTIONS"
   | "HEAD";
+
+/**
+ * Utility type to extract route parameters from a path string.
+ * Supports:
+ * - :param (basic parameters)
+ * - :param(regex) (parameters with regex constraints)
+ * - * (wildcard matching - only if it's the last significant segment)
+ */
+export type ExtractRouteParams<Path extends string> = Path extends `/${infer P}`
+  ? ExtractRouteParams<P>
+  : Path extends `${infer P}/`
+  ? ExtractRouteParams<P>
+  : ExtractParamsFromPathSegments<Path, {}>;
+
+type ExtractParamsFromPathSegments<
+  PathSegment extends string,
+  Acc extends Record<string, string>
+> = PathSegment extends `${infer Segment}/${infer Rest}`
+  ? ExtractParamsFromPathSegments<
+      Rest,
+      Acc & ExtractParamOrWildcardFromSegment<Segment>
+    >
+  : Acc & ExtractParamOrWildcardFromSegment<PathSegment>;
+
+type ExtractParamOrWildcardFromSegment<Segment extends string> =
+  Segment extends `*`
+    ? { wildcard: string }
+    : Segment extends `:${infer ParamName extends string}(${infer _Regex})`
+    ? { [K in ParamName]: string }
+    : Segment extends `:${infer ParamName extends string}`
+    ? { [K in ParamName]: string }
+    : {};
+
+/**
+ * Function signature for route handlers.
+ */
+export type Handler<
+  Path extends string,
+  Ctx extends Context<ExtractRouteParams<Path>> = Context<
+    ExtractRouteParams<Path>
+  >
+> = (ctx: Ctx) => Promise<void> | void;
+
+/**
+ * Function signature for route middlewares.
+ */
+export type Middleware<Ctx extends Context<any> = Context<any>> = (
+  ctx: Ctx,
+  next: () => void | Promise<void>
+) => void | Promise<void>;
+
+/**
+ * Represents a compiled route definition.
+ */
+export interface CompiledRoute<Path extends string = string> {
+  method: HTTPMethod;
+  path: Path;
+  handler: Handler<Path, any>;
+  middlewares?: Middleware<any>[];
+  regex: RegExp;
+  paramNames: string[];
+  hasWildcard: boolean;
+}
 
 export interface CookieOptions {
   maxAge?: number; // in seconds
@@ -252,10 +199,12 @@ export interface CacheEntry {
 export interface UploadedFile {
   fieldname: string;
   originalname: string;
+  encoding: string;
   mimetype: string;
-  size: number;
+  destination: string;
   filename: string;
   path: string;
+  size: number;
 }
 
 export interface FileUploadOptions {
@@ -282,23 +231,3 @@ export interface SaveFileOptions {
   allowedMimeTypes?: string[];
   mimetype: string;
 }
-
-export type ExtractRouteParams<Path extends string> = Path extends `${string}*`
-  ? ExtractRouteParamsWithWildcard<Path>
-  : ExtractRouteParamsWithoutWildcard<Path>;
-
-// Handle routes with wildcards
-type ExtractRouteParamsWithWildcard<Path extends string> =
-  ExtractRouteParamsWithoutWildcard<Path> & { wildcard: string };
-
-// Handle routes without wildcards
-type ExtractRouteParamsWithoutWildcard<Path extends string> =
-  Path extends `${infer Start}:${infer Param}/${infer Rest}`
-    ? Param extends `${infer Name}(${string})`
-      ? { [K in Name]: string } & ExtractRouteParamsWithoutWildcard<`/${Rest}`>
-      : { [K in Param]: string } & ExtractRouteParamsWithoutWildcard<`/${Rest}`>
-    : Path extends `${infer Start}:${infer Param}`
-    ? Param extends `${infer Name}(${string})`
-      ? { [K in Name]: string }
-      : { [K in Param]: string }
-    : {};

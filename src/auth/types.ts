@@ -1,4 +1,4 @@
-import { Context } from "../types/http";
+import { Context } from "../core/context";
 
 export interface UserPayload {
   id: string;

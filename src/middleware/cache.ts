@@ -1,4 +1,5 @@
-import { Middleware, Context, CacheEntry } from "../types/http";
+import { Context } from "../core/context";
+import { Middleware, CacheEntry } from "../types/http";
 
 const cacheStore = new Map<string, CacheEntry>();
 

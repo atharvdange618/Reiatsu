@@ -1,7 +1,8 @@
 import fs from "fs/promises";
 import path from "path";
-import { Context, Middleware } from "../types/http";
+import { Middleware } from "../types/http";
 import { getMimeType } from "../utils/mime";
+import { Context } from "../core/context";
 
 export function serveStatic(baseDir: string): Middleware {
   return async (ctx: Context, next) => {

@@ -1,4 +1,5 @@
 import { LogData, LoggerOptions, Middleware } from "../types/http";
+import { RequestIdContext } from "../types/types";
 
 const DEFAULT_LOGGER_OPTIONS: Required<Omit<LoggerOptions, "formatter">> & {
   formatter?: LoggerOptions["formatter"];
@@ -15,7 +16,7 @@ const DEFAULT_LOGGER_OPTIONS: Required<Omit<LoggerOptions, "formatter">> & {
  */
 export const createLoggerMiddleware = (
   options: LoggerOptions = {}
-): Middleware => {
+): Middleware<RequestIdContext> => {
   const config = { ...DEFAULT_LOGGER_OPTIONS, ...options };
 
   return async (ctx, next) => {
@@ -67,25 +68,28 @@ export const createLoggerMiddleware = (
 /**
  * Default logger middleware with sensible defaults
  */
-export const loggerMiddleware: Middleware = createLoggerMiddleware();
+export const loggerMiddleware: Middleware<RequestIdContext> =
+  createLoggerMiddleware();
 
 /**
  * Development logger with more verbose output
  */
-export const devLoggerMiddleware: Middleware = createLoggerMiddleware({
-  logHeaders: true,
-  logBody: true,
-  colorize: true,
-});
+export const devLoggerMiddleware: Middleware<RequestIdContext> =
+  createLoggerMiddleware({
+    logHeaders: true,
+    logBody: true,
+    colorize: true,
+  });
 
 /**
  * Production logger with minimal output
  */
-export const prodLoggerMiddleware: Middleware = createLoggerMiddleware({
-  logHeaders: false,
-  logBody: false,
-  colorize: false,
-});
+export const prodLoggerMiddleware: Middleware<RequestIdContext> =
+  createLoggerMiddleware({
+    logHeaders: false,
+    logBody: false,
+    colorize: false,
+  });
 
 // Helper functions
 function getClientIp(req: any): string {

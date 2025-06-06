@@ -1,9 +1,10 @@
 import { IncomingMessage } from "http";
-import { FileUploadOptions, UploadedFile } from "../types/http";
+import { FileUploadOptions } from "../types/http";
 import { bufferRequest } from "../utils/bufferRequest";
 import { parseMultipartFormData } from "../utils/parseMultipartFormData";
 import { saveFileToDisk } from "../utils/saveFileToDisk";
 import { mimeTypes as defaultMimeTypes } from "../utils/mime";
+import { UploadContext } from "../types/types";
 
 export function uploadMiddleware(
   options: FileUploadOptions = {
@@ -18,7 +19,7 @@ export function uploadMiddleware(
     ? Object.values(options.mimeTypes)
     : undefined;
 
-  return async (ctx: any, next: Function) => {
+  return async (ctx: UploadContext, next: Function) => {
     const req: IncomingMessage = ctx.req;
     const contentType = req.headers["content-type"] || "";
     if (!contentType.startsWith("multipart/form-data")) {
@@ -54,7 +55,8 @@ export function uploadMiddleware(
             size: part.data.length,
             filename: saved.filename,
             path: saved.path,
-          } as UploadedFile);
+            destination: dest,
+          });
         } catch (err: any) {
           ctx.status(400).json({ error: err.message });
           return;

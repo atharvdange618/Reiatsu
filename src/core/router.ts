@@ -1,30 +1,26 @@
 import { IncomingMessage, ServerResponse } from "http";
-import { Route, Middleware, Handler, HTTPMethod } from "../types/http";
+import {
+  Middleware,
+  Handler,
+  HTTPMethod,
+  CompiledRoute,
+  ExtractRouteParams,
+} from "../types/http";
 import { runMiddlewares } from "./middleware";
-import { createContext } from "../utils/context";
-
-interface CompiledRoute<Path extends string = string> {
-  method: HTTPMethod;
-  path: Path;
-  handler: Handler<Path>;
-  middlewares?: Middleware[];
-  regex: RegExp;
-  paramNames: string[];
-  hasWildcard: boolean;
-}
+import { Context, createContext } from "./context";
 
 /**
  * Type-safe Router class that provides compile-time parameter inference
  * for route handlers based on the route pattern.
  */
 export class Router {
-  private globalMiddlewares: Middleware[] = [];
-  private routes: CompiledRoute<any>[] = [];
+  private globalMiddlewares: Middleware<any>[] = [];
+  private routes: CompiledRoute<string>[] = [];
 
   /**
    * Add a global middleware that runs on all routes
    */
-  use(middleware: Middleware): void {
+  use(middleware: Middleware<any>): void {
     this.globalMiddlewares.push(middleware);
   }
 
@@ -43,7 +39,7 @@ export class Router {
     const paramNames: string[] = [];
     let hasWildcard = false;
 
-    const ESCAPE = /[.*+?^${}()|\[\]\\]/g;
+    const ESCAPE = /[.*+?^${}()|[\]\\]/g;
 
     const segments = path
       .split("/")
@@ -72,9 +68,6 @@ export class Router {
         }
 
         let constraint = rawConstraint!;
-        if (name === "date" && rawConstraint === "\\d{4}-\\d{2}-\\d{2}") {
-          constraint = "(?:\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01]))";
-        }
 
         paramNames.push(name);
         if (constraint) {
@@ -108,24 +101,6 @@ export class Router {
    * Attempts to match the incoming method + URL to a route in our route table.
    * Supports route params like /user/:id and extracts them into `params`.
    */
-  private matchRoute(
-    method: string,
-    url: string
-  ): { route: CompiledRoute<any>; params: Record<string, string> } | null {
-    const pathOnly = url.split("?")[0];
-    for (const route of this.routes) {
-      if (route.method !== method) continue;
-      const m = route.regex.exec(pathOnly);
-      if (!m) continue;
-      const groups = m.groups || {};
-      return { route, params: groups };
-    }
-    return null;
-  }
-
-  /**
-   * Main request handler with better type safety
-   */
   async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const fullUrl = new URL(req.url || "", `http://${req.headers.host}`);
     const query: Record<string, string | string[]> = {};
@@ -139,23 +114,36 @@ export class Router {
       }
     });
 
-    const ctx = createContext(req, res, query);
+    const ctx = createContext(req, res, query, {});
 
     try {
-      await runMiddlewares(ctx, this.globalMiddlewares, async () => {
-        const match = this.matchRoute(req.method || "", req.url || "");
-        if (!match) {
-          res.writeHead(404, { "Content-Type": "text/plain" });
-          res.end("Route Not Found");
-          return;
+      await runMiddlewares(
+        ctx as Context<Record<string, string>>,
+        this.globalMiddlewares,
+        async (currentCtx) => {
+          const match = this.matchRoute(req.method || "", req.url || "");
+          if (!match) {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            res.end("Route Not Found");
+            return;
+          }
+
+          Object.assign(currentCtx.params, match.params);
+
+          await runMiddlewares(
+            currentCtx as Context<ExtractRouteParams<typeof match.route.path>>,
+            match.route.middlewares || [],
+            async (specificRouteCtx) => {
+              await (
+                match.route.handler as Handler<
+                  typeof match.route.path,
+                  Context<ExtractRouteParams<typeof match.route.path>>
+                >
+              )(specificRouteCtx);
+            }
+          );
         }
-
-        ctx.params = match.params;
-
-        await runMiddlewares(ctx, match.route.middlewares || [], async () => {
-          await match.route.handler(ctx);
-        });
-      });
+      );
     } catch (err) {
       console.error("Router error:", err);
       if (!res.headersSent) {
@@ -165,26 +153,58 @@ export class Router {
     }
   }
 
-  /**
-   * Private method to register a route with enhanced type safety
-   */
+  private matchRoute(
+    method: string,
+    url: string
+  ):
+    | {
+        route: CompiledRoute<string>;
+        params: Record<string, string>;
+      }
+    | undefined {
+    const path = new URL(url, "http://localhost").pathname;
+    for (const route of this.routes) {
+      if (route.method === method) {
+        const match = route.regex.exec(path);
+        if (match) {
+          const params: Record<string, string> = {};
+          if (match.groups) {
+            for (const name of route.paramNames) {
+              if (match.groups[name]) {
+                params[name] = match.groups[name];
+              }
+            }
+          }
+          return { route: route, params };
+        }
+      }
+    }
+    return undefined;
+  }
+
   private addRoute<Path extends string>(
     method: HTTPMethod,
     path: Path,
-    ...handlers: [...middlewares: Middleware[], handler: Handler<Path>]
+    handlers: (
+      | Middleware<any>
+      | Handler<Path, Context<ExtractRouteParams<Path>>>
+    )[]
   ): void {
     if (handlers.length === 0) {
       throw new Error("At least one handler must be provided");
     }
 
-    const handler = handlers.pop() as Handler<Path>;
-    const middlewares = handlers as Middleware[];
+    const handler = handlers.pop() as Handler<
+      Path,
+      Context<ExtractRouteParams<Path>>
+    >;
+    const middlewares = handlers as Middleware<any>[];
 
     const compiled = this.compileRoute(path);
     const route: CompiledRoute<Path> = {
       method,
       path,
-      handler,
+      handler: handler,
       middlewares,
       regex: compiled.regex,
       paramNames: compiled.paramNames,
@@ -194,59 +214,80 @@ export class Router {
     this.routes.push(route);
   }
 
-  get<Path extends string>(
-    path: Path,
-    ...handlers: [...middlewares: Middleware[], handler: Handler<Path>]
+  get<P extends string>(
+    path: P,
+    ...handlers: [
+      ...middlewares: Middleware<any>[],
+      handler: Handler<P, Context<ExtractRouteParams<P>>>
+    ]
   ): void {
-    this.addRoute("GET", path, ...handlers);
+    this.addRoute("GET", path, handlers);
   }
 
-  post<Path extends string>(
-    path: Path,
-    ...handlers: [...middlewares: Middleware[], handler: Handler<Path>]
+  post<P extends string>(
+    path: P,
+    ...handlers: [
+      ...middlewares: Middleware<any>[],
+      handler: Handler<P, Context<ExtractRouteParams<P>>>
+    ]
   ): void {
-    this.addRoute("POST", path, ...handlers);
+    this.addRoute("POST", path, handlers);
   }
 
-  put<Path extends string>(
-    path: Path,
-    ...handlers: [...middlewares: Middleware[], handler: Handler<Path>]
+  put<P extends string>(
+    path: P,
+    ...handlers: [
+      ...middlewares: Middleware<any>[],
+      handler: Handler<P, Context<ExtractRouteParams<P>>>
+    ]
   ): void {
-    this.addRoute("PUT", path, ...handlers);
+    this.addRoute("PUT", path, handlers);
   }
 
-  delete<Path extends string>(
-    path: Path,
-    ...handlers: [...middlewares: Middleware[], handler: Handler<Path>]
+  delete<P extends string>(
+    path: P,
+    ...handlers: [
+      ...middlewares: Middleware<any>[],
+      handler: Handler<P, Context<ExtractRouteParams<P>>>
+    ]
   ): void {
-    this.addRoute("DELETE", path, ...handlers);
+    this.addRoute("DELETE", path, handlers);
   }
 
-  patch<Path extends string>(
-    path: Path,
-    ...handlers: [...middlewares: Middleware[], handler: Handler<Path>]
+  patch<P extends string>(
+    path: P,
+    ...handlers: [
+      ...middlewares: Middleware<any>[],
+      handler: Handler<P, Context<ExtractRouteParams<P>>>
+    ]
   ): void {
-    this.addRoute("PATCH", path, ...handlers);
+    this.addRoute("PATCH", path, handlers);
   }
 
-  options<Path extends string>(
-    path: Path,
-    ...handlers: [...middlewares: Middleware[], handler: Handler<Path>]
+  options<P extends string>(
+    path: P,
+    ...handlers: [
+      ...middlewares: Middleware<any>[],
+      handler: Handler<P, Context<ExtractRouteParams<P>>>
+    ]
   ): void {
-    this.addRoute("OPTIONS", path, ...handlers);
+    this.addRoute("OPTIONS", path, handlers);
   }
 
-  head<Path extends string>(
-    path: Path,
-    ...handlers: [...middlewares: Middleware[], handler: Handler<Path>]
+  head<P extends string>(
+    path: P,
+    ...handlers: [
+      ...middlewares: Middleware<any>[],
+      handler: Handler<P, Context<ExtractRouteParams<P>>>
+    ]
   ): void {
-    this.addRoute("HEAD", path, ...handlers);
+    this.addRoute("HEAD", path, handlers);
   }
 
   /**
    * Get all registered routes
    */
-  getRoutes(): CompiledRoute<any>[] {
+  getRoutes(): CompiledRoute<string>[] {
     return [...this.routes];
   }
 }

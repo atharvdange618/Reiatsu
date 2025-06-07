@@ -1,5 +1,11 @@
 # Reiatsu
 
+![npm](https://img.shields.io/npm/v/reiatsu)
+![npm](https://img.shields.io/npm/dm/reiatsu)
+![GitHub stars](https://img.shields.io/github/stars/atharvdange618/reiatsu?style=flat-square&color=ff69b4)
+![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero-ff69b4?style=flat-square)
+![TypeScript](https://img.shields.io/badge/TypeScript-First-ff69b4?style=flat-square)
+
 A minimal, type-safe HTTP server framework for Node.js, built from first principles using only Node.js core modules. Reiatsu is designed for simplicity, performance, and modern web development no dependencies, fully typed, and production-ready.
 
 ---

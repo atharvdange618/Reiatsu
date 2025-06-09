@@ -10,8 +10,32 @@ import { runMiddlewares } from "./middleware";
 import { Context, createContext } from "./context";
 
 /**
- * Type-safe Router class that provides compile-time parameter inference
- * for route handlers based on the route pattern.
+ * The `Router` class provides a lightweight HTTP routing system with support for route parameters,
+ * middleware, and route-specific handlers. It allows you to define routes for various HTTP methods,
+ * attach global and per-route middleware, and handle incoming HTTP requests by matching them to
+ * registered routes.
+ *
+ * ### Features
+ * - Register routes for HTTP methods: GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD.
+ * - Define route patterns with named parameters (e.g., `/user/:id`), regex constraints (e.g., `/user/:id(\\d+)`), and wildcards (e.g., `/files/*`).
+ * - Attach global middleware (runs on all routes) and per-route middleware.
+ * - Extracts route parameters and query parameters into the request context.
+ * - Handles 404 (route not found) and 500 (internal server error) responses.
+ *
+ * ### Usage
+ * ```typescript
+ * const router = new Router();
+ * router.use(globalMiddleware);
+ * router.get('/user/:id', userMiddleware, async (ctx) => { ... });
+ * ```
+ *
+ * @template Path - The route path string type.
+ * @template Context - The context type passed to handlers and middleware.
+ *
+ * @remarks
+ * - Route parameters are extracted and made available in the context.
+ * - Middleware functions can be asynchronous and can short-circuit the request.
+ * - The router is designed to be used with Node.js HTTP servers.
  */
 export class Router {
   private globalMiddlewares: Middleware<any>[] = [];
@@ -25,11 +49,17 @@ export class Router {
   }
 
   /**
-   * Compiles a route pattern into a regex with named capture groups
-   * Supports:
-   * - :param - basic parameters
-   * - :param(regex) - parameters with regex constraints
-   * - * - wildcard matching (captures remaining path)
+   * Compiles a route path string into a regular expression for matching URLs,
+   * extracting parameter names and detecting wildcards.
+   *
+   * Supports named parameters (e.g., `:id`), optional regex constraints for parameters
+   * (e.g., `:id(\\d+)`), and a trailing wildcard segment (`*`) for catch-all routes.
+   *
+   * @param path - The route path pattern to compile (e.g., `/users/:id(\\d+)/posts/*`).
+   * @returns An object containing:
+   *   - `regex`: The generated regular expression for matching the route.
+   *   - `paramNames`: An array of parameter names extracted from the path.
+   *   - `hasWildcard`: A boolean indicating if the route ends with a wildcard segment.
    */
   private compileRoute(path: string): {
     regex: RegExp;
@@ -98,8 +128,14 @@ export class Router {
   }
 
   /**
-   * Attempts to match the incoming method + URL to a route in our route table.
-   * Supports route params like /user/:id and extracts them into `params`.
+   * Handles incoming HTTP requests by parsing the URL and query parameters,
+   * creating a context, and executing global and route-specific middlewares.
+   * If a matching route is found, invokes the corresponding route handler.
+   * Responds with a 404 status if no route matches, or a 500 status on errors.
+   *
+   * @param req - The incoming HTTP request object.
+   * @param res - The HTTP server response object.
+   * @returns A promise that resolves when the request has been fully handled.
    */
   async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const fullUrl = new URL(req.url || "", `http://${req.headers.host}`);
@@ -153,6 +189,13 @@ export class Router {
     }
   }
 
+  /**
+   * Attempts to match a given HTTP method and URL against the registered routes.
+   *
+   * @param method - The HTTP method (e.g., "GET", "POST") to match.
+   * @param url - The full URL to match against the route patterns.
+   * @returns An object containing the matched route and extracted parameters if a match is found; otherwise, `undefined`.
+   */
   private matchRoute(
     method: string,
     url: string
@@ -182,6 +225,16 @@ export class Router {
     return undefined;
   }
 
+  /**
+   * Adds a new route to the router with the specified HTTP method, path, and handlers.
+   *
+   * @template Path - The type of the route path as a string literal.
+   * @param method - The HTTP method for the route (e.g., 'GET', 'POST').
+   * @param path - The route path pattern, which may include parameters.
+   * @param handlers - An array of middleware functions and a final route handler.
+   *                   The last element must be a route handler; preceding elements are treated as middleware.
+   * @throws {Error} If no handlers are provided.
+   */
   private addRoute<Path extends string>(
     method: HTTPMethod,
     path: Path,

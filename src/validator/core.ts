@@ -20,6 +20,44 @@ export type ValidationResult<T> = {
 
 const customRules: { [name: string]: RuleFunction } = {};
 
+/**
+ * BaseValidator is a generic class that provides a foundation for building custom validation logic.
+ * It manages a list of validation rules and supports marking fields as required.
+ *
+ * @typeParam T - The type of value being validated.
+ *
+ * @implements ValidatorSchema<T>
+ *
+ * @example
+ * ```typescript
+ * const validator = new BaseValidator<string>().required("Name is required");
+ * const result = await validator.validate("");
+ * // result.error._field === "Name is required"
+ * ```
+ *
+ * @property rules - An array of functions representing validation rules.
+ * @property _isRequired - Indicates if the field is required.
+ *
+ * @method addRule
+ * Adds a custom validation rule to the validator.
+ * @param rule - The validation function to add.
+ * @returns The current instance for chaining.
+ *
+ * @method required
+ * Marks the field as required and adds a required rule.
+ * @param msg - The error message to use if the field is missing.
+ * @returns The current instance for chaining.
+ *
+ * @method validate
+ * Validates the provided value against all rules.
+ * @param value - The value to validate.
+ * @returns A promise resolving to a ValidationResult containing either the validated value or error(s).
+ *
+ * @static register
+ * Registers a custom rule globally and adds a corresponding method to the prototype for chaining.
+ * @param name - The name of the custom rule.
+ * @param fn - The rule function.
+ */
 export class BaseValidator<T = any> implements ValidatorSchema<T> {
   rules: RuleFunction[] = [];
   protected _isRequired: boolean = false;

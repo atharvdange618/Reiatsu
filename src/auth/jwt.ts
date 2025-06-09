@@ -7,7 +7,38 @@ import {
   timingSafeEqual as nodeTimingSafeEqual,
 } from "crypto";
 
+/**
+ * Creates a middleware function for handling JWT authentication in HTTP requests.
+ *
+ * This middleware extracts a JWT from the specified HTTP header, verifies or decodes it,
+ * and attaches the decoded payload to the context. It supports configurable options such as
+ * the secret key, algorithm, header name, authentication scheme, and error handling.
+ *
+ * @param options - Configuration options for JWT authentication.
+ * @returns A middleware function that processes JWT authentication for incoming requests.
+ *
+ * @remarks
+ * - If `decodeOnly` is true, the JWT is only decoded and not verified.
+ * - If `required` is true, requests without a valid JWT will be rejected with a 401 status.
+ * - If `onError` is provided, it will be called on authentication errors.
+ *
+ * @example
+ * ```typescript
+ * app.use(jwtMiddleware({ secret: "mysecret" }));
+ * ```
+ */
 export function jwtMiddleware(options: JWTAuthOptions): Middleware {
+  /**
+   * Options for configuring JWT authentication.
+   *
+   * @property secret - The secret key used to sign and verify JWT tokens.
+   * @property algorithm - The algorithm used for signing the JWT. Defaults to "HS256".
+   * @property header - The HTTP header from which to extract the JWT. Defaults to "authorization".
+   * @property scheme - The authentication scheme expected in the header. Defaults to "Bearer".
+   * @property decodeOnly - If true, only decodes the JWT without verifying the signature. Defaults to false.
+   * @property required - If true, authentication is required and requests without a valid JWT will be rejected. Defaults to true.
+   * @property onError - Optional error handler function to be called on authentication errors.
+   */
   const {
     secret,
     algorithm = "HS256",
@@ -56,6 +87,18 @@ export function jwtMiddleware(options: JWTAuthOptions): Middleware {
   };
 }
 
+/**
+ * Signs a JSON Web Token (JWT) with the given payload and secret.
+ *
+ * @param payload - The payload to include in the JWT. Should be a plain object.
+ * @param secret - The secret key used to sign the JWT.
+ * @param expiresIn - Optional. The expiration time for the token (e.g., "1h", "30m"). Defaults to "1h".
+ * @returns The signed JWT as a string.
+ *
+ * @remarks
+ * The function uses the HS256 algorithm to sign the token. The `iat` (issued at) and `exp` (expiration) claims
+ * are automatically added to the payload based on the current time and the `expiresIn` parameter.
+ */
 export function signJWT(
   payload: Record<string, any>,
   secret: string,
@@ -85,6 +128,18 @@ export function signJWT(
   return `${base64Header}.${base64Payload}.${signature}`;
 }
 
+/**
+ * Decodes and verifies a JSON Web Token (JWT) using the provided secret.
+ *
+ * This function splits the JWT into its header, payload, and signature components,
+ * verifies the signature using HMAC SHA-256 and the provided secret, and checks
+ * the token's expiration (if present). If the token is valid and not expired,
+ * it returns the decoded payload as an object. Otherwise, it returns `null`.
+ *
+ * @param token - The JWT string to decode and verify.
+ * @param secret - The secret key used to verify the token's signature.
+ * @returns The decoded payload as a record if the token is valid, or `null` if invalid or expired.
+ */
 export function decodeJWT(
   token: string,
   secret: string
@@ -104,6 +159,13 @@ export function decodeJWT(
 
 // --- Internal Utility Functions ---
 
+/**
+ * Parses a string representing a time duration (e.g., "10m", "2h") and returns the equivalent number of seconds.
+ *
+ * @param exp - The expiration string in the format of a number followed by a unit ('s' for seconds, 'm' for minutes, 'h' for hours, 'd' for days).
+ * @returns The duration in seconds.
+ * @throws {Error} If the input format is invalid.
+ */
 function parseExpiry(exp: string): number {
   const match = exp.match(/^(\d+)([smhd])$/);
   if (!match) throw new Error("Invalid expiresIn format");

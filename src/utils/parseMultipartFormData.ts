@@ -15,6 +15,25 @@ function bufferIndexOf(buffer: Buffer, sub: Buffer, start = 0): number {
   return -1;
 }
 
+/**
+ * Parses a multipart/form-data buffer into its constituent parts.
+ *
+ * @param buffer - The raw Buffer containing the multipart/form-data payload.
+ * @param boundary - The boundary string used to separate parts in the multipart data.
+ * @returns An array of `MultipartPart` objects, each representing a part of the multipart form data.
+ *
+ * @remarks
+ * This function extracts headers, field names, filenames (if present), content types, and the raw data for each part.
+ * It expects the buffer to be formatted according to the multipart/form-data specification.
+ *
+ * @example
+ * ```typescript
+ * const parts = parseMultipartFormData(buffer, boundary);
+ * parts.forEach(part => {
+ *   console.log(part.name, part.filename, part.contentType);
+ * });
+ * ```
+ */
 export function parseMultipartFormData(
   buffer: Buffer,
   boundary: string

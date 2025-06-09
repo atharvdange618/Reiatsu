@@ -12,7 +12,19 @@ const DEFAULT_LOGGER_OPTIONS: Required<Omit<LoggerOptions, "formatter">> & {
 };
 
 /**
- * Creates a logger middleware with the specified options
+ * Creates a logger middleware for HTTP request/response logging.
+ *
+ * This middleware logs incoming requests, outgoing responses, and errors with configurable options.
+ * It captures details such as request method, URL, headers, body, user agent, client IP, timestamps,
+ * response status code, and duration. Logging behavior can be customized via the `LoggerOptions` parameter.
+ *
+ * @param options - Optional configuration for logging behavior. Merges with default logger options.
+ * @returns A middleware function compatible with the application's middleware pipeline.
+ *
+ * @example
+ * ```typescript
+ * app.use(createLoggerMiddleware({ logHeaders: true, logBody: false }));
+ * ```
  */
 export const createLoggerMiddleware = (
   options: LoggerOptions = {}

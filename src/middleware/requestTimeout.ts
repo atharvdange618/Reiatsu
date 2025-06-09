@@ -4,7 +4,7 @@ import { Middleware } from "../types/http";
 export const createTimeoutMiddleware = (
   timeoutMs: number = 30000
 ): Middleware => {
-  return async (ctx, next) => {
+  return async (_, next) => {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
         reject(

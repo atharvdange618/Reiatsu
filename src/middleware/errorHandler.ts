@@ -1,5 +1,5 @@
 import { ErrorResponse, Middleware } from "../types/http";
-import { AppError, ValidationError } from "../errors/AppError";
+import { AppError } from "../errors/AppError";
 
 export const errorHandlerMiddleware: Middleware = async (ctx, next) => {
   try {
@@ -79,10 +79,6 @@ function handleError(err: any, ctx: any) {
     path: ctx.req.url || "",
     method: ctx.req.method || "",
   };
-
-  if (details && (isDevelopment || err instanceof ValidationError)) {
-    errorResponse.details = details;
-  }
 
   if (isDevelopment && err.stack) {
     errorResponse.stack = err.stack;

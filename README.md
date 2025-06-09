@@ -222,18 +222,36 @@ router.get("/download/:filename", async (ctx) => {
 
 ## 🧪 Input Validation
 
-```typescript
-import { Validator } from "reiatsu";
+Reiatsu provides a powerful, type-safe validation system with composable validators:
 
-router.post("/users", (ctx) => {
-  const { name, email, age } = ctx.body;
-  Validator.required(name, "Name");
-  Validator.email(email);
-  Validator.minLength(name, 2, "Name");
-  if (age) {
-    const validAge = Validator.isNumber(age, "Age");
-    Validator.range(validAge, 0, 120, "Age");
+```typescript
+import {
+  StringValidator,
+  NumberValidator,
+  ObjectValidator,
+  ArrayValidator,
+} from "reiatsu";
+
+// Define a user validator
+const userValidator = new ObjectValidator({
+  name: new StringValidator()
+    .required()
+    .min(2, "Name must be at least 2 characters"),
+  email: new StringValidator().required().email("Invalid email address"),
+  age: new NumberValidator()
+    .min(0, "Age must be positive")
+    .max(120, "Age must be realistic"),
+  hobbies: new ArrayValidator(new StringValidator().min(2)),
+});
+
+router.post("/users", async (ctx) => {
+  const result = await userValidator.validate(ctx.body);
+  if (result.error) {
+    return ctx.status(400).json({ errors: result.error });
   }
+  // result.value contains the validated data
+  const user = result.value;
+  ctx.json({ message: "User created", user });
 });
 ```
 
@@ -415,11 +433,16 @@ import {
   decodeJWT,
 
   // Validation
-  Validator,
+  BaseValidator,
+  StringValidator,
+  NumberValidator,
+  ObjectValidator,
+  ArrayValidator,
+  ValidationResult,
+  ValidationError,
 
   // Error Classes
   AppError,
-  ValidationError,
 
   // Helper Functions
   asyncHandler,

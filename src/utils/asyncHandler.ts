@@ -1,5 +1,6 @@
 import { Context } from "../core/context";
 import { Handler, ExtractRouteParams } from "../types/http";
+
 /**
  * Wraps async route handlers to automatically catch and forward errors
  * to the error handling middleware.

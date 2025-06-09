@@ -3,6 +3,20 @@ import { Middleware } from "../types/http";
 
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
+/**
+ * Creates a rate limiting middleware to restrict the number of requests per client within a specified time window.
+ *
+ * @param maxRequests - The maximum number of requests allowed per client within the time window. Defaults to 100.
+ * @param windowMs - The duration of the time window in milliseconds. Defaults to 15 minutes (15 * 60 * 1000 ms).
+ * @returns A middleware function that enforces rate limiting based on client IP address.
+ *
+ * @throws {RateLimitError} If the client exceeds the allowed number of requests within the time window.
+ *
+ * @example
+ * ```typescript
+ * app.use(createRateLimiter(50, 10 * 60 * 1000)); // 50 requests per 10 minutes
+ * ```
+ */
 export const createRateLimiter = (
   maxRequests: number = 100,
   windowMs: number = 15 * 60 * 1000 // 15 minutes
@@ -10,7 +24,7 @@ export const createRateLimiter = (
   return async (ctx, next) => {
     const clientId =
       ctx.req.headers["x-forwarded-for"] ||
-      ctx.req.connection?.remoteAddress ||
+      ctx.req.socket?.remoteAddress ||
       "unknown";
 
     const now = Date.now();

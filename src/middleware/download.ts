@@ -4,6 +4,21 @@ import { InternalServerError, NotFoundError } from "../errors/AppError";
 import { mimeTypes } from "../utils/mime";
 import { Context } from "../core/context";
 
+/**
+ * Middleware that adds a `download` helper method to the context.
+ *
+ * The `ctx.download(filePath, filename?)` method allows controllers to easily send files
+ * as downloadable attachments to the client. It sets appropriate headers, streams the file,
+ * and handles errors if the file does not exist or streaming fails.
+ *
+ * @returns An async middleware function that augments the context with a `download` method.
+ *
+ * @example
+ * // Usage in a route
+ * router.get('/download/:file', async (ctx) => {
+ *   await ctx.download(`/files/${ctx.params.file}`);
+ * });
+ */
 export function downloadHelperMiddleware() {
   return async (ctx: Context, next: Function) => {
     ctx.download = (filePath: string, filename?: string) => {

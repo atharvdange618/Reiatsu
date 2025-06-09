@@ -6,6 +6,22 @@ import { saveFileToDisk } from "../utils/saveFileToDisk";
 import { mimeTypes as defaultMimeTypes } from "../utils/mime";
 import { UploadContext } from "../types/types";
 
+/**
+ * Middleware for handling file uploads via multipart/form-data requests.
+ *
+ * @param options - Configuration options for file uploads.
+ * @param options.dest - Destination directory for uploaded files. Defaults to "uploads".
+ * @param options.maxFileSize - Maximum allowed file size in bytes. Defaults to 20 MB.
+ * @param options.mimeTypes - Allowed MIME types for uploaded files. Defaults to `defaultMimeTypes`.
+ *
+ * @returns An async middleware function compatible with the UploadContext.
+ *
+ * @remarks
+ * - Parses incoming multipart/form-data requests, saves files to disk, and attaches file metadata to `ctx.files`.
+ * - Non-file fields are added to `ctx.body`.
+ * - If the request is not multipart/form-data, the middleware passes control to the next handler.
+ * - If a file exceeds the maximum size or has a disallowed MIME type, responds with a 400 error.
+ */
 export function uploadMiddleware(
   options: FileUploadOptions = {
     dest: "uploads",

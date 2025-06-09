@@ -3,6 +3,19 @@ import { Middleware, CacheEntry } from "../types/http";
 
 const cacheStore = new Map<string, CacheEntry>();
 
+/**
+ * Middleware to cache HTTP responses for a specified duration.
+ *
+ * Stores responses in an in-memory cache and serves cached responses
+ * for subsequent requests with the same method and URL, as long as the
+ * cache entry is still valid (not expired).
+ *
+ * @param ttlSeconds - Time-to-live for the cache entry in seconds. Defaults to 60 seconds.
+ * @returns A middleware function that handles caching logic.
+ *
+ * @example
+ * app.use(cache(120)); // Cache responses for 2 minutes
+ */
 export function cache(ttlSeconds: number = 60): Middleware {
   return async (ctx: Context, next) => {
     const key = `${ctx.req.method}:${ctx.req.url}`;

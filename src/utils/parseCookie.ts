@@ -1,3 +1,12 @@
+/**
+ * Parses a cookie string into an object mapping cookie names to their values.
+ *
+ * Splits the input string by semicolons, trims whitespace, and decodes each cookie value.
+ * Handles cookies with and without values, and gracefully falls back if decoding fails.
+ *
+ * @param cookieString - The raw cookie string (e.g., from `document.cookie` or HTTP headers).
+ * @returns An object where each key is a cookie name and each value is the corresponding cookie value.
+ */
 export function parseCookie(cookieString: string): Record<string, string> {
   const cookies: Record<string, string> = {};
 

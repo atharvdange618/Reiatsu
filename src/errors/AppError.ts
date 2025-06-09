@@ -1,3 +1,28 @@
+/**
+ * Represents a custom application error with additional metadata.
+ *
+ * Extends the native `Error` class to include HTTP status codes, operational flags,
+ * optional error codes, and additional details for enhanced error handling.
+ *
+ * @example
+ * ```typescript
+ * throw new AppError('Resource not found', 404, 'NOT_FOUND');
+ * ```
+ *
+ * @remarks
+ * Use this class to throw errors that should be handled gracefully by the application.
+ *
+ * @property statusCode - The HTTP status code associated with the error.
+ * @property isOperational - Indicates if the error is operational (expected) or a programming error.
+ * @property errorCode - An optional application-specific error code.
+ * @property details - Optional additional information about the error.
+ *
+ * @param message - The error message.
+ * @param statusCode - The HTTP status code (default: 500).
+ * @param errorCode - An optional application-specific error code.
+ * @param isOperational - Whether the error is operational (default: true).
+ * @param details - Optional additional error details.
+ */
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;

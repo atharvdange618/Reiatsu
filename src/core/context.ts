@@ -7,6 +7,47 @@ import { extname, basename } from "path";
 import { render, renderFile } from "./template-engine";
 import { QueryParams } from "../types/http";
 
+/**
+ * Represents the context for a single HTTP request/response cycle.
+ *
+ * Provides convenient helpers for accessing request data (headers, cookies, query, body, etc.)
+ * and for sending responses (status, body, content type, cookies, redirects, downloads, rendering).
+ *
+ * @typeParam TParams - The type of route parameters, defaults to an object with string values.
+ *
+ * @property {boolean} isAuthenticated - Indicates if the request is authenticated.
+ * @property {IncomingMessage} req - The raw Node.js HTTP request object.
+ * @property {ServerResponse} res - The raw Node.js HTTP response object.
+ * @property {TParams} params - Route parameters extracted from the URL.
+ * @property {QueryParams} [query] - Query string parameters.
+ * @property {any} [body] - Parsed request body.
+ *
+ * @method get - Retrieves a request header value by name.
+ * @method header - Alias for `get`.
+ * @method hasHeader - Checks if a request header is present.
+ * @method is - Checks if the request Content-Type matches a given type.
+ * @method ip - Returns the remote IP address.
+ * @method protocol - Returns the protocol ("http" or "https").
+ * @method secure - Returns true if the protocol is "https".
+ * @method hostname - Returns the hostname from the request.
+ * @method subdomains - Returns an array of subdomains.
+ * @method cookies - Returns parsed cookies as an object.
+ * @method path - Returns the request path.
+ * @method originalUrl - Returns the original request URL.
+ * @method method - Returns the HTTP method.
+ *
+ * @method status - Sets the HTTP response status code.
+ * @method send - Sends a raw response body with a specified content type.
+ * @method text - Sends a plain text response.
+ * @method html - Sends an HTML response.
+ * @method xml - Sends an XML response.
+ * @method json - Sends a JSON response.
+ * @method redirect - Redirects to a different URL.
+ * @method cookie - Sets a cookie in the response.
+ * @method download - Sends a file as a download.
+ * @method render - Renders a template string with data and sends as HTML.
+ * @method renderFile - Renders a template file with data and sends as HTML.
+ */
 export class Context<TParams extends Record<string, string> = {}> {
   isAuthenticated: boolean;
 

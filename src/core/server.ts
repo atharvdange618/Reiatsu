@@ -19,6 +19,9 @@ export function serve(port: number) {
     });
   });
 
+  // Always-on, 10s forced shutdown timeout
+  setupGracefulShutdown(server, { timeoutMs: 10000 });
+
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
   });

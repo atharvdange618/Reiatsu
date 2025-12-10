@@ -12,13 +12,16 @@ export { ObjectValidator, ArrayValidator } from "./validator/compound";
 export type { ValidationError, ValidationResult } from "./validator/core";
 
 // Middleware
+export { authMiddleware } from "./middleware/auth";
 export { bodyParserMiddleware } from "./middleware/bodyParser";
-export { corsPresets } from "./middleware/cors";
+export { cache } from "./middleware/cache";
+export { corsPresets, createCorsMiddleware } from "./middleware/cors";
 export { errorHandlerMiddleware } from "./middleware/errorHandler";
 export {
   createLoggerMiddleware,
   devLoggerMiddleware,
 } from "./middleware/logger";
+export { notFoundMiddleware } from "./middleware/notFound";
 export { createRateLimiter } from "./middleware/rateLimiter";
 export { createRequestIdMiddleware } from "./middleware/requestId";
 export { createRequestSizeLimiter } from "./middleware/requestSize";

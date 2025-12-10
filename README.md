@@ -139,6 +139,7 @@ class Context<TParams extends Record<string, string> = {}> {
 
 ## 🛡️ Built-in Middleware
 
+- **Authentication** (`authMiddleware`)
 - **CORS** (`corsPresets`, `createCorsMiddleware`)
 - **Rate Limiting** (`createRateLimiter`)
 - **Request Logging** (`loggerMiddleware`, `devLoggerMiddleware`, `createLoggerMiddleware`)
@@ -148,8 +149,8 @@ class Context<TParams extends Record<string, string> = {}> {
 - **Request Size & Timeout** (`createRequestSizeLimiter`, `createTimeoutMiddleware`)
 - **Body Parsing** (`bodyParserMiddleware`)
 - **Error Handling** (`errorHandlerMiddleware`)
+- **Not Found Handler** (`notFoundMiddleware`)
 - **Request ID** (`createRequestIdMiddleware`)
-- **Authentication** (`authMiddleware`)
 - **Download Helper** (`downloadHelperMiddleware`)
 
 Example usage:
@@ -157,12 +158,15 @@ Example usage:
 ```typescript
 import {
   use,
+  router,
   corsPresets,
   serveStatic,
   bodyParserMiddleware,
   errorHandlerMiddleware,
   createLoggerMiddleware,
   createSecurityHeadersMiddleware,
+  cache,
+  notFoundMiddleware,
 } from "reiatsu";
 
 // Basic middleware setup
@@ -183,6 +187,15 @@ use(
     colorize: process.env.NODE_ENV !== "production",
   })
 );
+
+// Per-route cache
+router.get("/data", cache(300), async (ctx) => {
+  // Cached for 5 minutes
+  ctx.json({ data: "expensive computation" });
+});
+
+// 404 handler (should be last)
+use(notFoundMiddleware);
 ```
 
 ---
@@ -318,20 +331,51 @@ router.get("/admin", authMiddleware(process.env.JWT_SECRET), (ctx) => {
 Reiatsu provides a robust error handling system with custom error classes and centralized error handling middleware.
 
 ```typescript
-import { errorHandlerMiddleware, AppError } from "reiatsu";
+import {
+  errorHandlerMiddleware,
+  AppError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+  RateLimitError,
+  InternalServerError,
+} from "reiatsu";
 
 // Global error handling
 use(errorHandlerMiddleware);
 
-// Custom error handling
+// Using built-in error classes
 router.get("/items/:id", (ctx) => {
   const item = items.find((i) => i.id === ctx.params.id);
   if (!item) {
-    throw new AppError("Item not found", 404, "ITEM_NOT_FOUND");
+    throw new NotFoundError("Item"); // 404 with NOT_FOUND code
   }
   ctx.json(item);
 });
+
+router.post("/admin", (ctx) => {
+  if (!ctx.user?.isAdmin) {
+    throw new AuthorizationError("Admin access required"); // 403
+  }
+  // Admin logic
+});
+
+// Custom error with AppError
+router.post("/users", (ctx) => {
+  throw new AppError("Email already exists", 409, "DUPLICATE_EMAIL");
+});
 ```
+
+**Available Error Classes:**
+
+- `AppError(message, statusCode, errorCode?)` - Base error class
+- `AuthenticationError(message?)` - 401 authentication failures
+- `AuthorizationError(message?)` - 403 permission denied
+- `NotFoundError(resource?)` - 404 resource not found
+- `ConflictError(message)` - 409 conflict errors
+- `RateLimitError(message?)` - 429 rate limit exceeded
+- `InternalServerError(message?, details?)` - 500 server errors
 
 Error responses include:
 
@@ -368,6 +412,69 @@ The template engine supports:
 - Includes and partials
 - HTML escaping
 - Custom template paths
+
+---
+
+## 🔄 Graceful Shutdown
+
+Reiatsu includes built-in graceful shutdown handling for production environments. The server automatically handles SIGTERM and SIGINT signals, ensuring clean shutdowns.
+
+```typescript
+import { serve } from "reiatsu";
+
+serve(3000);
+// Graceful shutdown is automatically configured with:
+// - 10-second timeout for pending requests
+// - Automatic rejection of new requests during shutdown
+// - Clean connection closure
+```
+
+**Features:**
+
+- Stops accepting new connections on shutdown signal
+- Waits for active requests to complete (up to 10s)
+- Returns 503 status for requests received during shutdown
+- Tracks active request count
+- Force exits after timeout to prevent hanging
+
+**Production Deployment:**
+
+The graceful shutdown handler integrates seamlessly with:
+
+- Docker containers (SIGTERM handling)
+- Kubernetes pods (graceful termination)
+- PM2 and other process managers
+- Cloud platform deployment hooks
+
+---
+
+## 🧪 Testing
+
+Reiatsu uses [Vitest](https://vitest.dev/) for testing. The framework includes comprehensive tests for core functionality.
+
+```bash
+# Run tests
+npm test
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+**Test Structure:**
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { signJWT, decodeJWT } from "reiatsu";
+
+describe("JWT Authentication", () => {
+  it("should generate and verify tokens", () => {
+    const payload = { id: "123", email: "user@example.com" };
+    const token = signJWT(payload, "secret", "1h");
+    const decoded = decodeJWT(token, "secret");
+    expect(decoded.id).toBe("123");
+  });
+});
+```
 
 ---
 
@@ -421,6 +528,10 @@ import {
 
   // Error Handling
   errorHandlerMiddleware,
+  notFoundMiddleware,
+
+  // Rate Limiting
+  createRateLimiter,
 } from "reiatsu";
 ```
 
@@ -443,6 +554,12 @@ import {
 
   // Error Classes
   AppError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+  RateLimitError,
+  InternalServerError,
 
   // Helper Functions
   asyncHandler,

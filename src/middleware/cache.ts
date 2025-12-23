@@ -3,6 +3,15 @@ import { Middleware, CacheEntry } from "../types/http";
 
 const cacheStore = new Map<string, CacheEntry>();
 
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of cacheStore.entries()) {
+    if (now - entry.timestamp >= entry.ttl) {
+      cacheStore.delete(key);
+    }
+  }
+}, 30000);
+
 /**
  * Middleware to cache HTTP responses for a specified duration.
  *

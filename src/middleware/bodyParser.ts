@@ -1,6 +1,8 @@
 import querystring from "querystring";
 import { Middleware } from "../types/http";
 
+const DEFAULT_SIZE_LIMIT = 10 * 1024 * 1024; // 10MB
+
 /**
  * Combined body parser middleware that handles both JSON and URL-encoded data
  * based on the Content-Type header.
@@ -20,8 +22,26 @@ export const bodyParserMiddleware: Middleware = (ctx, next) => {
 
   return new Promise<void>((resolve, reject) => {
     let rawBody = "";
+    let size = 0;
+    let exceededLimit = false;
 
     req.on("data", (chunk) => {
+      if (exceededLimit) return; // Ignore further data
+
+      size += chunk.length;
+
+      // Prevent memory exhaustion from large payloads
+      if (size > DEFAULT_SIZE_LIMIT) {
+        exceededLimit = true;
+        ctx.status(413).json({
+          error: "Request entity too large",
+          maxSize: DEFAULT_SIZE_LIMIT,
+          received: size,
+        });
+        resolve();
+        return;
+      }
+
       rawBody += chunk.toString();
     });
 

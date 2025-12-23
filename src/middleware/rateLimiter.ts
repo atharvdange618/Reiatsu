@@ -3,6 +3,15 @@ import { Middleware } from "../types/http";
 
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, data] of requestCounts.entries()) {
+    if (now > data.resetTime) {
+      requestCounts.delete(key);
+    }
+  }
+}, 60000);
+
 /**
  * Creates a rate limiting middleware to restrict the number of requests per client within a specified time window.
  *

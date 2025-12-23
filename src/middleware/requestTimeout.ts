@@ -5,8 +5,10 @@ export const createTimeoutMiddleware = (
   timeoutMs: number = 30000
 ): Middleware => {
   return async (_, next) => {
+    let timeoutId: NodeJS.Timeout;
+
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         reject(
           new AppError(
             `Request timeout after ${timeoutMs}ms`,
@@ -19,8 +21,8 @@ export const createTimeoutMiddleware = (
 
     try {
       await Promise.race([next(), timeoutPromise]);
-    } catch (error) {
-      throw error;
+    } finally {
+      clearTimeout(timeoutId!);
     }
   };
 };

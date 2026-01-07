@@ -1,22 +1,32 @@
 import { BaseValidator } from "./core";
 
 export class StringValidator extends BaseValidator<string> {
-  min(len: number, msg = `Must be at most ${len} characters`) {
+  min(len: number, msg?: string) {
+    const message = msg || `Must be at least ${len} characters`;
     return this.addRule((value) =>
-      typeof value === "string" && value.length < len ? msg : undefined
+      typeof value === "string" && value.length < len ? message : undefined
     );
   }
-  max(len: number, msg = `Must be at most ${len} characters`) {
+
+  max(len: number, msg?: string) {
+    const message = msg || `Must be at most ${len} characters`;
     return this.addRule((value) =>
-      typeof value === "string" && value.length > len ? msg : undefined
+      typeof value === "string" && value.length > len ? message : undefined
     );
   }
-  email(msg = "Invalid Email Address") {
-    return this.addRule((value) =>
-      typeof value === "string" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-        ? msg
-        : undefined
-    );
+
+  /**
+   * Validates email format using a more comprehensive regex pattern.
+   */
+  email(msg = "Invalid email address") {
+    return this.addRule((value) => {
+      if (typeof value !== "string") return msg;
+
+      const emailRegex =
+        /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
+      return !emailRegex.test(value) ? msg : undefined;
+    });
   }
 }
 

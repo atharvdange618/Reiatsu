@@ -6,7 +6,7 @@ const DEFAULT_CORS_OPTIONS: Required<CorsOptions> = {
   allowedHeaders: ["Content-Type", "Authorization"],
   exposedHeaders: [],
   credentials: false,
-  maxAge: 86400, // 24 hours
+  maxAge: 86400,
   preflightContinue: false,
   optionsSuccessStatus: 204,
 };
@@ -40,15 +40,13 @@ export const createCorsMiddleware = (options: CorsOptions = {}): Middleware => {
       ctx.res.setHeader("Access-Control-Expose-Headers", exposedHeaders);
     }
 
-    // Handle preflight requests (OPTIONS)
+    // Handle preflight requests
     if (requestMethod === "OPTIONS") {
-      // Set allowed methods
       const methods = Array.isArray(config.methods)
         ? config.methods.join(", ")
         : config.methods;
       ctx.res.setHeader("Access-Control-Allow-Methods", methods);
 
-      // Set allowed headers
       const requestHeaders = ctx.req.headers["access-control-request-headers"];
       if (requestHeaders) {
         const allowedHeaders = Array.isArray(config.allowedHeaders)
@@ -57,12 +55,10 @@ export const createCorsMiddleware = (options: CorsOptions = {}): Middleware => {
         ctx.res.setHeader("Access-Control-Allow-Headers", allowedHeaders);
       }
 
-      // Set max age for preflight cache
       if (config.maxAge > 0) {
         ctx.res.setHeader("Access-Control-Max-Age", config.maxAge.toString());
       }
 
-      // If preflightContinue is false, end the request here
       if (!config.preflightContinue) {
         ctx.res.writeHead(config.optionsSuccessStatus);
         ctx.res.end();
@@ -80,6 +76,9 @@ export const createCorsMiddleware = (options: CorsOptions = {}): Middleware => {
 export const corsPresets = {
   /**
    * Development preset - allows all origins and common headers
+   *
+   * @security WARNING: This reflects any request origin, effectively disabling CORS.
+   * Only use in development environments. Never use in production.
    */
   development: (): Middleware =>
     createCorsMiddleware({
@@ -90,6 +89,8 @@ export const corsPresets = {
 
   /**
    * Production preset - more restrictive defaults
+   *
+   * @param allowedOrigins - Array of allowed origins (e.g., ['https://myapp.com'])
    */
   production: (allowedOrigins: string[]): Middleware =>
     createCorsMiddleware({
@@ -114,6 +115,10 @@ export const corsPresets = {
 
 /**
  * Helper function to determine the allowed origin
+ *
+ * @security When configOrigin is `true`, this reflects the request origin,
+ * which effectively disables CORS protection. Only use in development or
+ * when you explicitly want to allow all origins.
  */
 function getAllowedOrigin(
   requestOrigin: string,
@@ -133,12 +138,12 @@ function getAllowedOrigin(
     return configOrigin === "*" ? "*" : configOrigin;
   }
 
-  // If origin is an array
+  // If origin is an array - validate against whitelist
   if (Array.isArray(configOrigin)) {
     return configOrigin.includes(requestOrigin) ? requestOrigin : null;
   }
 
-  // If origin is a function
+  // If origin is a function - custom validation
   if (typeof configOrigin === "function") {
     return configOrigin(requestOrigin) ? requestOrigin : null;
   }

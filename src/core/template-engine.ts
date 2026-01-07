@@ -26,12 +26,29 @@ function escapeHtml(str: any): string {
  * - `<%- ... %>` for raw output
  * - `<% ... %>` for plain JavaScript code execution
  *
+ * @security WARNING: This function uses `new Function()` which is similar to `eval()`.
+ * Only use with trusted template sources. Do NOT use with user-generated content.
+ * For user-generated templates, consider using a sandboxed library like Handlebars or EJS.
+ *
  * @param {string} template - The template string to compile.
  * @returns {function} A function that takes data and returns the rendered string.
+ * @throws {Error} If template contains forbidden code patterns
  */
 export function compile(
   template: string
 ): (data: Record<string, any>) => string {
+  if (
+    template.includes("require(") ||
+    template.includes("import(") ||
+    template.includes("process.") ||
+    template.includes("global.") ||
+    template.includes("__dirname") ||
+    template.includes("__filename")
+  ) {
+    throw new Error(
+      "Template contains forbidden code patterns that could pose security risks"
+    );
+  }
   let code = 'let output = "";\n';
   let cursor = 0;
   const regex = /<%([=-]?)([\s\S]+?)%>/g;

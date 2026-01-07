@@ -34,45 +34,37 @@ export const createLoggerMiddleware = (
   return async (ctx, next) => {
     const { method, url } = ctx.req;
     const start = Date.now();
-    const timestamp = new Date().toISOString();
 
-    const logData: LogData = {
+    const createLogData = (): LogData => ({
       requestId: ctx.requestId,
       method: method || "UNKNOWN",
       url: url || "/",
       userAgent: ctx.req.headers["user-agent"],
       ip: getClientIp(ctx.req),
-      timestamp,
-    };
+      timestamp: new Date().toISOString(),
+      headers: config.logHeaders ? ctx.req.headers : undefined,
+      body: config.logBody && ctx.body ? ctx.body : undefined,
+    });
 
-    if (config.logHeaders) {
-      logData.headers = ctx.req.headers;
-    }
-
-    if (config.logBody && ctx.body) {
-      logData.body = ctx.body;
-    }
-
-    // Log incoming request
-    console.log(formatIncomingRequest(logData, config));
+    console.log(formatIncomingRequest(createLogData(), config));
 
     try {
       await next();
 
-      // Log successful response
       const duration = Date.now() - start;
-      logData.duration = duration;
-      logData.statusCode = ctx.res.statusCode;
+      const responseLogData = createLogData();
+      responseLogData.duration = duration;
+      responseLogData.statusCode = ctx.res.statusCode;
 
-      console.log(formatOutgoingResponse(logData, config));
+      console.log(formatOutgoingResponse(responseLogData, config));
     } catch (error) {
-      // Log error response
       const duration = Date.now() - start;
-      logData.duration = duration;
-      logData.statusCode = ctx.res.statusCode || 500;
+      const errorLogData = createLogData();
+      errorLogData.duration = duration;
+      errorLogData.statusCode = ctx.res.statusCode || 500;
 
-      console.log(formatErrorResponse(logData, config));
-      throw error; // Re-throw to let error middleware handle it
+      console.error(formatErrorResponse(errorLogData, config));
+      throw error;
     }
   };
 };

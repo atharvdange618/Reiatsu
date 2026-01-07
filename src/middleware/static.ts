@@ -6,7 +6,6 @@ import { Context } from "../core/context";
 
 export function serveStatic(baseDir: string): Middleware {
   return async (ctx: Context, next) => {
-    // Only process requests that start with /static/
     if (!ctx.req.url?.startsWith("/static/")) {
       await next();
       return;
@@ -14,12 +13,10 @@ export function serveStatic(baseDir: string): Middleware {
 
     const { url = "" } = ctx.req;
 
-    // Extract path after /static/ prefix
     const unsafePath = decodeURIComponent(url.replace(/^\/static\//, ""));
     const resolvedPath = path.resolve(process.cwd(), baseDir, unsafePath);
     const safeBase = path.resolve(process.cwd(), baseDir);
 
-    // 🛡 Prevent path traversal: ensure the resolved path starts with the base dir
     if (!resolvedPath.startsWith(safeBase)) {
       ctx.res.writeHead(403, { "Content-Type": "text/plain" });
       ctx.res.end("Forbidden");
@@ -34,7 +31,11 @@ export function serveStatic(baseDir: string): Middleware {
       ctx.res.end(data);
     } catch (err: any) {
       if (err.code === "ENOENT") {
-        // File not found, proceed to next middleware
+        await next();
+      } else if (err.code === "EACCES" || err.code === "EPERM") {
+        ctx.res.writeHead(403, { "Content-Type": "text/plain" });
+        ctx.res.end("Forbidden");
+      } else if (err.code === "EISDIR") {
         await next();
       } else {
         console.error("Static file error:", err);

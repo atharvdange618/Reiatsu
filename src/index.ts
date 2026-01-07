@@ -33,6 +33,12 @@ export { downloadHelperMiddleware } from "./middleware/download";
 
 // Types
 export type { Handler, Middleware } from "./types/http";
+export type {
+  AuthContext,
+  RequestIdContext,
+  UploadContext,
+  BodyContext,
+} from "./types/custom-context";
 
 // Utilities
 export * from "./utils/asyncHandler";

@@ -1,6 +1,7 @@
 // Framework
-export { serve } from "./core/server";
+export { serve, setupGracefulShutdown } from "./core/server";
 export { router, use } from "./core/router";
+export { compose } from "./core/compose";
 
 // Context
 export { Context } from "./core/context";
@@ -26,10 +27,23 @@ export { createRateLimiter } from "./middleware/rateLimiter";
 export { createRequestIdMiddleware } from "./middleware/requestId";
 export { createRequestSizeLimiter } from "./middleware/requestSize";
 export { createTimeoutMiddleware } from "./middleware/requestTimeout";
-export { createSecurityHeadersMiddleware } from "./middleware/security";
+export {
+  createSecurityHeadersMiddleware,
+  securityHeadersMiddleware,
+} from "./middleware/security";
+export type { SecurityHeadersOptions } from "./middleware/security";
 export { serveStatic } from "./middleware/static";
 export { uploadMiddleware } from "./middleware/upload";
 export { downloadHelperMiddleware } from "./middleware/download";
+export {
+  createCompressionMiddleware,
+  type CompressionOptions,
+} from "./middleware/compression";
+export {
+  createCSRFMiddleware,
+  csrfMiddleware,
+  type CSRFOptions,
+} from "./middleware/csrf";
 
 // Types
 export type { Handler, Middleware } from "./types/http";
@@ -46,6 +60,7 @@ export * from "./utils/bufferRequest";
 export * from "./utils/mime";
 export * from "./utils/parseMultipartFormData";
 export * from "./utils/saveFileToDisk";
+export * from "./utils/sanitize";
 
 // Errors
 export * from "./errors/AppError";

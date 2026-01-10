@@ -2,10 +2,12 @@ import { IncomingMessage, ServerResponse } from "http";
 import { parse as parseUrl } from "url";
 import type { TLSSocket } from "tls";
 import { parseCookie } from "../utils/parseCookie";
-import { readFileSync, statSync } from "fs";
+import { readFileSync, statSync, createReadStream } from "fs";
 import { extname, basename } from "path";
 import { render, renderFile } from "./template-engine";
 import { QueryParams } from "../types/http";
+import { Readable } from "stream";
+import { getMimeType } from "../utils/mime";
 
 /**
  * Represents the context for a single HTTP request/response cycle.
@@ -221,6 +223,76 @@ export class Context<TParams extends Record<string, string> = {}> {
   renderFile(filePath: string, data: Record<string, any> = {}) {
     const html = renderFile(filePath, data);
     this.html(html);
+  }
+
+  /**
+   * Stream a readable stream as the response.
+   * This is more memory-efficient than loading the entire content into memory.
+   *
+   * @param stream - The readable stream to pipe to the response
+   * @param options - Optional configuration for content type, filename, and disposition
+   *
+   * @example
+   * ```typescript
+   * const stream = createReadStream('./large-video.mp4');
+   * ctx.stream(stream, { contentType: 'video/mp4' });
+   * ```
+   */
+  stream(
+    stream: Readable,
+    options: {
+      contentType?: string;
+      filename?: string;
+      disposition?: "inline" | "attachment";
+    } = {}
+  ) {
+    const { contentType, filename, disposition = "inline" } = options;
+
+    if (contentType) {
+      this.res.setHeader("Content-Type", contentType);
+    }
+
+    if (filename) {
+      this.res.setHeader(
+        "Content-Disposition",
+        `${disposition}; filename="${filename}"`
+      );
+    }
+
+    stream.pipe(this.res);
+  }
+
+  /**
+   * Stream a file from disk as the response.
+   * More memory-efficient than reading the entire file into memory.
+   *
+   * @param filePath - Path to the file to stream
+   * @param options - Optional configuration for content type and disposition
+   *
+   * @example
+   * ```typescript
+   * // Stream a large video file
+   * ctx.streamFile('./videos/movie.mp4');
+   *
+   * // Stream as download
+   * ctx.streamFile('./report.pdf', { disposition: 'attachment' });
+   * ```
+   */
+  streamFile(
+    filePath: string,
+    options?: {
+      contentType?: string;
+      disposition?: "inline" | "attachment";
+    }
+  ) {
+    const stream = createReadStream(filePath);
+    const contentType = options?.contentType || getMimeType(filePath);
+
+    this.stream(stream, {
+      ...options,
+      contentType,
+      filename: basename(filePath),
+    });
   }
 }
 

@@ -1,10 +1,7 @@
 import { writeFileSync, mkdirSync } from "fs";
-import { join, extname, basename } from "path";
+import { join, extname } from "path";
 import { SaveFileOptions } from "../types/http";
-
-export function sanitizeFilename(name: string): string {
-  return basename(name).replace(/[^a-zA-Z0-9_.-]/g, "_");
-}
+import { sanitizeFilename } from "./sanitize";
 
 /**
  * Saves a file to disk with validation for file size and MIME type.

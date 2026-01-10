@@ -6,255 +6,322 @@
 ![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero-ff69b4?style=flat-square)
 ![TypeScript](https://img.shields.io/badge/TypeScript-First-ff69b4?style=flat-square)
 
-A minimal, type-safe HTTP server framework for Node.js, built from first principles using only Node.js core modules. Reiatsu is designed for simplicity, performance, and modern web development no dependencies, fully typed, and production-ready.
+A minimal, type-safe HTTP framework for Node.js built from first principles using **zero dependencies**. Production-ready with comprehensive security, performance optimizations, and modern developer experience.
 
----
-
-## 🚀 Installation
-
-Install Reiatsu from npm:
+## Quick Start
 
 ```bash
 npm i reiatsu
 ```
 
----
-
-## ✨ Features
-
-- **Pure Node.js HTTP**: Built on Node.js's `http` module for maximum performance
-- **Zero Dependencies**: No external packages just Node.js
-- **TypeScript First**: Fully typed, with comprehensive TypeScript support
-- **Advanced Routing**: Dynamic, parameterized, and wildcard routes
-- **Flexible Middleware**: Global and per-route, with async/await support
-- **Request/Response Helpers**: Modern, chainable helpers for clean handler logic
-- **Built-in Middleware**: CORS, rate limiting, logging, security headers, static file serving, body parsing, and more
-- **Security & Error Handling**: Centralized error handling, custom error classes, request ID tracking, and input validation
-- **Production Ready**: Environment-specific optimizations, security best practices, and detailed logging
-
----
-
-## 🛣️ Quick Start
-
 ```typescript
 import { router, serve } from "reiatsu";
 
 router.get("/", (ctx) => {
-  ctx.status(200).json({ message: "Hello, World!" });
+  ctx.json({ message: "Hello, World!" });
 });
 
 serve(3000);
 ```
 
----
+## Key Features
 
-## 🧩 Middleware Example
+### Core
+
+- **Zero Dependencies** - Pure Node.js, no external packages
+- **TypeScript First** - Fully typed with intelligent route parameter inference
+- **High Performance** - Built on Node.js `http` module with streaming support
+- **Advanced Routing** - Dynamic params, wildcards, and pattern matching
+
+### Security & Performance
+
+- **Comprehensive Security** - CSRF protection, sanitization, security headers, timing-safe operations
+- **Smart Compression** - Automatic gzip/Brotli compression
+- **Response Streaming** - Memory-efficient large file handling
+- **Input Validation** - Type-safe, composable validators
+
+### Developer Experience
+
+- **Middleware Composition** - Reusable middleware stacks
+- **Built-in Auth** - JWT authentication with helpers
+- **Template Engine** - EJS-like syntax with automatic escaping
+- **Rich Middleware** - CORS, rate limiting, logging, caching, and more
+
+## Table of Contents
+
+- [Core Concepts](#-core-concepts)
+- [Routing](#-routing)
+- [Middleware](#-middleware)
+- [Security](#-security)
+- [Performance](#-performance)
+- [Validation](#-validation)
+- [Authentication](#-authentication)
+- [Error Handling](#-error-handling)
+- [Production Setup](#-production-setup)
+
+## Core Concepts
+
+### Basic Server
 
 ```typescript
-import { use, router } from "reiatsu";
-import {
-  createLoggerMiddleware,
-  corsPresets,
-  errorHandlerMiddleware,
-  bodyParserMiddleware,
-} from "reiatsu";
+import { router, serve, use } from "reiatsu";
 
-// Global error handling
+// Add global middleware
+use(bodyParserMiddleware);
 use(errorHandlerMiddleware);
 
-// Request parsing
-use(bodyParserMiddleware);
+// Define routes
+router.get("/users/:id", (ctx) => {
+  ctx.json({ id: ctx.params.id }); // TypeScript knows params.id exists!
+});
 
-// Logging with custom options
-use(
-  createLoggerMiddleware({
-    logHeaders: true,
-    logBody: true,
-    colorize: process.env.NODE_ENV !== "production",
-  })
-);
-
-// CORS configuration
-use(corsPresets.development());
-
-// Route-specific middleware
-router.post("/upload", uploadMiddleware({ dest: "uploads/" }), async (ctx) => {
-  // Handle file upload
+// Start server with graceful shutdown
+serve(3000, {
+  onShutdown: async () => {
+    await db.close(); // Cleanup resources
+  },
 });
 ```
 
----
+### Context API
 
-## 📖 API Reference
-
-### Context Class
-
-Every route handler receives an instance of the `Context` class with typed route parameters and helpers:
+The `Context` object provides everything you need:
 
 ```typescript
-class Context<TParams extends Record<string, string> = {}> {
-  // Core properties
-  req: IncomingMessage;
-  res: ServerResponse;
-  params: TParams;
-  query?: QueryParams;
-  body?: any;
-  isAuthenticated: boolean;
+router.post("/api/data", async (ctx) => {
+  // Request data
+  const body = ctx.body; // Parsed body
+  const token = ctx.header("authorization");
+  const userId = ctx.params.id; // Route params (typed!)
+  const page = ctx.query?.page; // Query params
 
-  // Request Properties & Methods
-  get(name: string): string | undefined; // Get request header
-  header(name: string): string | undefined; // Alias for get()
-  hasHeader(name: string): boolean; // Check header exists
-  is(type: string): boolean; // Check content type
+  // Response helpers (chainable)
+  ctx.status(201).json({ success: true });
 
-  // Request Property Getters
-  get ip(): string; // Client IP address
-  get protocol(): string; // 'http' or 'https'
-  get secure(): boolean; // true if HTTPS
-  get hostname(): string; // Host without port
-  get subdomains(): string[]; // Subdomain array
-  get cookies(): Record<string, string>; // Parsed cookies
-  get path(): string; // Request path
-  get originalUrl(): string; // Full request URL
-  get method(): string; // HTTP method
-
-  // Response Methods
-  status(code: number): this; // Set status (chainable)
-  send(body: any, type?: string): void; // Send response
-  json(data: any): void; // Send JSON response
-  text(body: string): void; // Send plain text
-  html(body: string): void; // Send HTML
-  xml(body: string): void; // Send XML
-  redirect(url: string, status?: number): void; // HTTP redirect
-
-  // Special Response Helpers
-  cookie(name: string, value: string, options?: CookieOptions): void;
-  download(filePath: string, filename?: string): void;
-  render(templateStr: string, data?: Record<string, any>): void;
-  renderFile(filePath: string, data?: Record<string, any>): void;
-}
+  // Other responses
+  ctx.text("Hello"); // Plain text
+  ctx.html("<h1>Hi</h1>"); // HTML
+  ctx.redirect("/login"); // Redirect
+  ctx.download("file.pdf"); // File download
+  ctx.streamFile("video.mp4"); // Stream large files
+});
 ```
 
----
+## Routing
 
-## 🛡️ Built-in Middleware
+```typescript
+// Basic routes
+router.get("/", (ctx) => ctx.json({ status: "ok" }));
+router.post("/users", createUser);
+router.put("/users/:id", updateUser);
+router.delete("/users/:id", deleteUser);
 
-- **Authentication** (`authMiddleware`)
-- **CORS** (`corsPresets`, `createCorsMiddleware`)
-- **Rate Limiting** (`createRateLimiter`)
-- **Request Logging** (`loggerMiddleware`, `devLoggerMiddleware`, `createLoggerMiddleware`)
-- **Static File Serving** (`serveStatic`)
-- **Cache Middleware** (`cache`)
-- **Security Headers** (`createSecurityHeadersMiddleware`)
-- **Request Size & Timeout** (`createRequestSizeLimiter`, `createTimeoutMiddleware`)
-- **Body Parsing** (`bodyParserMiddleware`)
-- **Error Handling** (`errorHandlerMiddleware`)
-- **Not Found Handler** (`notFoundMiddleware`)
-- **Request ID** (`createRequestIdMiddleware`)
-- **Download Helper** (`downloadHelperMiddleware`)
+// Dynamic parameters (fully typed)
+router.get("/posts/:postId/comments/:commentId", (ctx) => {
+  // TypeScript knows: ctx.params = { postId: string, commentId: string }
+  const { postId, commentId } = ctx.params;
+});
 
-Example usage:
+// Wildcards
+router.get("/files/*", (ctx) => {
+  // Matches /files/anything/here
+});
+
+// Route-specific middleware
+router.post("/protected", authMiddleware("secret"), rateLimiter(10), handler);
+```
+
+## Middleware
+
+### Global Middleware
 
 ```typescript
 import {
   use,
-  router,
-  corsPresets,
-  serveStatic,
   bodyParserMiddleware,
-  errorHandlerMiddleware,
   createLoggerMiddleware,
-  createSecurityHeadersMiddleware,
-  cache,
-  notFoundMiddleware,
+  securityHeadersMiddleware,
+  createCompressionMiddleware,
+  csrfMiddleware,
+  corsPresets,
 } from "reiatsu";
 
-// Basic middleware setup
-use(bodyParserMiddleware);
-use(errorHandlerMiddleware);
-use(serveStatic("public"));
-use(createSecurityHeadersMiddleware());
+// Apply to all routes
+use(errorHandlerMiddleware); // Error handling
+use(bodyParserMiddleware); // Parse JSON/form data
+use(createLoggerMiddleware()); // Request logging
+use(securityHeadersMiddleware); // Security headers (CSP, HSTS, etc.)
+use(createCompressionMiddleware()); // gzip/Brotli compression
+use(csrfMiddleware); // CSRF protection
+use(corsPresets.development()); // CORS
+```
 
-// CORS configuration
-use(corsPresets.development()); // For development
-use(corsPresets.production(["https://myapp.com"])); // For production
+### Composable Middleware Stacks
 
-// Custom logger setup
-use(
-  createLoggerMiddleware({
-    logHeaders: true,
-    logBody: true,
-    colorize: process.env.NODE_ENV !== "production",
-  })
+```typescript
+import { compose } from "reiatsu";
+
+// Create reusable stacks
+const authStack = compose(
+  requestIdMiddleware,
+  loggerMiddleware,
+  authMiddleware("secret")
 );
 
-// Per-route cache
-router.get("/data", cache(300), async (ctx) => {
-  // Cached for 5 minutes
-  ctx.json({ data: "expensive computation" });
-});
+const apiStack = compose(corsMiddleware, createRateLimiter(100), authStack);
 
-// 404 handler (should be last)
-use(notFoundMiddleware);
+// Use in routes
+router.post("/api/protected", apiStack, handler);
 ```
 
----
+### Built-in Middleware
 
-## 📦 File Upload & Download
+| Middleware                       | Purpose                   | Example                                            |
+| -------------------------------- | ------------------------- | -------------------------------------------------- |
+| `bodyParserMiddleware`           | Parse JSON/form data      | Auto-applied                                       |
+| `securityHeadersMiddleware`      | CSP, HSTS, XSS protection | `use(securityHeadersMiddleware)`                   |
+| `createCompressionMiddleware()`  | gzip/Brotli compression   | `use(createCompressionMiddleware({ level: 6 }))`   |
+| `csrfMiddleware`                 | CSRF protection           | `use(csrfMiddleware)`                              |
+| `createCorsMiddleware()`         | CORS configuration        | `use(corsPresets.production(["https://app.com"]))` |
+| `createRateLimiter(max, window)` | Rate limiting             | `use(createRateLimiter(100, 15*60*1000))`          |
+| `authMiddleware(secret)`         | JWT authentication        | `use(authMiddleware("secret"))`                    |
+| `cache(ttlSeconds)`              | Response caching          | `router.get("/data", cache(60), handler)`          |
+| `serveStatic(dir)`               | Static file serving       | `use(serveStatic("public"))`                       |
+| `createTimeoutMiddleware(ms)`    | Request timeouts          | `use(createTimeoutMiddleware(30000))`              |
 
-**Upload:**
+## Security
 
-```typescript
-import { uploadMiddleware } from "reiatsu";
-
-router.post("/upload", uploadMiddleware({ dest: "uploads/" }), async (ctx) => {
-  if (!ctx.files || ctx.files.length === 0) {
-    return ctx.status(400).json({ error: "No files uploaded" });
-  }
-  ctx.json({
-    message: "Files uploaded successfully",
-    files: ctx.files,
-    fields: ctx.body,
-  });
-});
-```
-
-**Download:**
-
-```typescript
-router.get("/download/:filename", async (ctx) => {
-  let filePath = (ctx.query && ctx.query.path) || (ctx.body && ctx.body.path);
-  if (!filePath) {
-    filePath = `uploads/${ctx.params.filename}`;
-  }
-  ctx.download(filePath);
-});
-```
-
----
-
-## 🧪 Input Validation
-
-Reiatsu provides a powerful, type-safe validation system with composable validators:
+### Comprehensive Protection
 
 ```typescript
 import {
+  securityHeadersMiddleware,
+  csrfMiddleware,
+  createRateLimiter,
+  escapeHtml,
+  sanitizeFilename,
+  sanitizeUrl,
+} from "reiatsu";
+
+// Security headers (CSP, HSTS, X-Frame-Options, etc.)
+use(securityHeadersMiddleware);
+
+// CSRF protection
+use(csrfMiddleware);
+
+// Rate limiting
+use(createRateLimiter(100, 15 * 60 * 1000)); // 100 req/15min
+
+// Input sanitization
+router.post("/comment", (ctx) => {
+  const safe = escapeHtml(ctx.body.comment); // Prevent XSS
+  const filename = sanitizeFilename(ctx.body.file); // Prevent path traversal
+  const url = sanitizeUrl(ctx.body.link); // Validate URLs
+});
+```
+
+### CSRF Protection
+
+```typescript
+// Middleware auto-generates tokens
+use(csrfMiddleware);
+
+// In HTML forms
+router.get("/form", (ctx) => {
+  ctx.html(`
+    <form method="POST">
+      <input type="hidden" name="_csrf" value="${ctx.csrfToken}">
+      <button>Submit</button>
+    </form>
+  `);
+});
+
+// For AJAX (send token in header)
+// X-CSRF-Token: <token-from-cookie>
+```
+
+### Sanitization Utilities
+
+```typescript
+import { escapeHtml, stripHtml, sanitizeFilename, sanitizeUrl } from "reiatsu";
+
+escapeHtml('<script>alert("XSS")</script>');
+// → '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;'
+
+sanitizeFilename("../../etc/passwd");
+// → '.._.._etc_passwd'
+
+sanitizeUrl('javascript:alert("XSS")');
+// → '#'
+```
+
+## Performance
+
+### Response Compression
+
+```typescript
+import { createCompressionMiddleware } from "reiatsu";
+
+// Automatic gzip/Brotli compression
+use(
+  createCompressionMiddleware({
+    threshold: 1024, // Min size to compress (bytes)
+    level: 6, // Compression level (0-9)
+    preferBrotli: true, // Use Brotli when available
+  })
+);
+// 15-20% better compression with Brotli!
+```
+
+### Streaming Large Files
+
+```typescript
+// Memory-efficient file streaming
+router.get("/video/:id", (ctx) => {
+  ctx.streamFile(`./videos/${ctx.params.id}.mp4`);
+  // Streams directly to client, low memory usage
+});
+
+// Stream any readable
+import { createReadStream } from "fs";
+router.get("/data", (ctx) => {
+  const stream = createReadStream("large-file.json");
+  ctx.stream(stream, { contentType: "application/json" });
+});
+```
+
+### Response Caching
+
+```typescript
+import { cache } from "reiatsu";
+
+// Cache responses for 5 minutes
+router.get("/api/stats", cache(300), async (ctx) => {
+  const stats = await getExpensiveStats();
+  ctx.json(stats);
+});
+```
+
+## Validation
+
+Type-safe, composable validators:
+
+```typescript
+import {
+  ObjectValidator,
   StringValidator,
   NumberValidator,
-  ObjectValidator,
   ArrayValidator,
 } from "reiatsu";
 
-// Define a user validator
 const userValidator = new ObjectValidator({
   name: new StringValidator()
     .required()
-    .min(2, "Name must be at least 2 characters"),
-  email: new StringValidator().required().email("Invalid email address"),
-  age: new NumberValidator()
-    .min(0, "Age must be positive")
-    .max(120, "Age must be realistic"),
-  hobbies: new ArrayValidator(new StringValidator().min(2)),
+    .min(2, "Too short")
+    .max(50, "Too long"),
+  email: new StringValidator().required().email("Invalid email"),
+  age: new NumberValidator().min(0).max(120),
+  tags: new ArrayValidator(new StringValidator().min(1)),
 });
 
 router.post("/users", async (ctx) => {
@@ -262,390 +329,233 @@ router.post("/users", async (ctx) => {
   if (result.error) {
     return ctx.status(400).json({ errors: result.error });
   }
-  // result.value contains the validated data
-  const user = result.value;
-  ctx.json({ message: "User created", user });
+  const user = result.value; // Validated data
+  ctx.json({ success: true, user });
 });
 ```
 
----
+## Authentication
 
-## 🔐 Authentication & Authorization
-
-Reiatsu provides built-in JWT authentication middleware and helpers for securing routes and managing user sessions.
-
-**Using Authentication Middleware:**
+Built-in JWT authentication:
 
 ```typescript
 import { authMiddleware, signJWT, decodeJWT } from "reiatsu";
 
-// Protect all routes below this middleware
-use(authMiddleware(process.env.JWT_SECRET));
+// Global authentication
+use(authMiddleware(process.env.JWT_SECRET!));
 
-// Protected route: ctx.user and ctx.isAuthenticated will be set
+// Protected routes
 router.get("/profile", (ctx) => {
   if (!ctx.isAuthenticated) {
     return ctx.status(401).json({ error: "Unauthorized" });
   }
-  ctx.json({ user: ctx.user });
+  ctx.json({ user: ctx.user }); // Auto-populated from JWT
+});
+
+// Per-route auth
+router.get("/admin", authMiddleware(process.env.JWT_SECRET!), (ctx) => {
+  ctx.json({ message: "Admin area", user: ctx.user });
+});
+
+// Create tokens
+router.post("/login", async (ctx) => {
+  const user = await validateCredentials(ctx.body);
+  const token = signJWT(
+    { id: user.id, email: user.email },
+    process.env.JWT_SECRET!,
+    "24h"
+  );
+  ctx.json({ token });
 });
 ```
 
-**Working with JWTs:**
+## Error Handling
 
-```typescript
-import { signJWT, decodeJWT } from "reiatsu";
-
-// Sign a JWT
-const token = signJWT(
-  { userId: "123", email: "user@example.com" },
-  process.env.JWT_SECRET,
-  "1h" // expires in 1 hour
-);
-
-// Verify and decode a JWT
-const payload = decodeJWT(token, process.env.JWT_SECRET);
-```
-
-**Per-Route Authentication:**
-
-```typescript
-import { authMiddleware } from "reiatsu";
-
-// Protect a specific route
-router.get("/admin", authMiddleware(process.env.JWT_SECRET), (ctx) => {
-  // Will only reach here if token is valid
-  ctx.json({
-    message: "Welcome, admin!",
-    user: ctx.user,
-  });
-});
-```
-
-- `ctx.user` is automatically populated if the JWT is valid.
-
----
-
-## 🛠️ Error Handling
-
-Reiatsu provides a robust error handling system with custom error classes and centralized error handling middleware.
+Centralized error handling with custom error classes:
 
 ```typescript
 import {
   errorHandlerMiddleware,
   AppError,
+  NotFoundError,
   AuthenticationError,
   AuthorizationError,
-  NotFoundError,
-  ConflictError,
-  RateLimitError,
-  InternalServerError,
 } from "reiatsu";
 
-// Global error handling
+// Global error handler (add first!)
 use(errorHandlerMiddleware);
 
-// Using built-in error classes
-router.get("/items/:id", (ctx) => {
-  const item = items.find((i) => i.id === ctx.params.id);
-  if (!item) {
-    throw new NotFoundError("Item"); // 404 with NOT_FOUND code
+// Throw typed errors
+router.get("/users/:id", async (ctx) => {
+  const user = await findUser(ctx.params.id);
+  if (!user) {
+    throw new NotFoundError("User");
   }
-  ctx.json(item);
+  ctx.json(user);
 });
 
 router.post("/admin", (ctx) => {
   if (!ctx.user?.isAdmin) {
-    throw new AuthorizationError("Admin access required"); // 403
+    throw new AuthorizationError("Admin required");
   }
   // Admin logic
 });
 
-// Custom error with AppError
-router.post("/users", (ctx) => {
-  throw new AppError("Email already exists", 409, "DUPLICATE_EMAIL");
-});
+// Custom errors
+throw new AppError("Email exists", 409, "DUPLICATE_EMAIL");
 ```
 
-**Available Error Classes:**
+**Error Classes:** `AppError`, `NotFoundError`, `AuthenticationError`, `AuthorizationError`, `ConflictError`, `RateLimitError`, `InternalServerError`
 
-- `AppError(message, statusCode, errorCode?)` - Base error class
-- `AuthenticationError(message?)` - 401 authentication failures
-- `AuthorizationError(message?)` - 403 permission denied
-- `NotFoundError(resource?)` - 404 resource not found
-- `ConflictError(message)` - 409 conflict errors
-- `RateLimitError(message?)` - 429 rate limit exceeded
-- `InternalServerError(message?, details?)` - 500 server errors
+## Production Setup
 
-Error responses include:
-
-- HTTP status code
-- Error message
-- Error code
-- Request details (in development)
-- Stack trace (in development)
-
----
-
-## 📝 Template Rendering
-
-Built-in template engine with EJS-like syntax:
+Complete production-ready configuration:
 
 ```typescript
-// Render a template string
-router.get("/hello", (ctx) => {
-  ctx.render("Hello, <%= name %>!", { name: "World" });
-});
+import {
+  serve,
+  use,
+  router,
+  compose,
+  errorHandlerMiddleware,
+  bodyParserMiddleware,
+  createLoggerMiddleware,
+  securityHeadersMiddleware,
+  createCompressionMiddleware,
+  csrfMiddleware,
+  createCorsMiddleware,
+  createRateLimiter,
+  authMiddleware,
+  notFoundMiddleware,
+} from "reiatsu";
 
-// Render a template file
-router.get("/page", (ctx) => {
-  ctx.renderFile("templates/page.html", {
-    title: "Welcome",
-    user: ctx.user,
-  });
+// 1. Error handling (first!)
+use(errorHandlerMiddleware);
+
+// 2. Security
+use(securityHeadersMiddleware); // CSP, HSTS, etc.
+use(csrfMiddleware); // CSRF protection
+use(
+  createCorsMiddleware({
+    origin: process.env.ALLOWED_ORIGINS?.split(","),
+    credentials: true,
+  })
+);
+
+// 3. Performance
+use(createCompressionMiddleware()); // gzip/Brotli
+use(createRateLimiter(100, 15 * 60 * 1000)); // Rate limiting
+
+// 4. Request processing
+use(bodyParserMiddleware);
+use(
+  createLoggerMiddleware({
+    colorize: process.env.NODE_ENV !== "production",
+  })
+);
+
+// 5. Routes
+const authStack = compose(
+  authMiddleware(process.env.JWT_SECRET!),
+  createRateLimiter(20, 60 * 1000)
+);
+
+router.get("/", (ctx) => ctx.json({ status: "ok" }));
+router.post("/api/protected", authStack, protectedHandler);
+
+// 6. 404 handler (last!)
+use(notFoundMiddleware);
+
+// 7. Start with graceful shutdown
+serve(Number(process.env.PORT) || 3000, {
+  onShutdown: async () => {
+    console.log("Cleaning up...");
+    await db.close();
+    cache.clear();
+  },
 });
 ```
 
-The template engine supports:
-
-- EJS-like syntax (<%= %> for values)
-- Includes and partials
-- HTML escaping
-- Custom template paths
-
----
-
-## 🔄 Graceful Shutdown
-
-Reiatsu includes built-in graceful shutdown handling for production environments. The server automatically handles SIGTERM and SIGINT signals, ensuring clean shutdowns.
-
-```typescript
-import { serve } from "reiatsu";
-
-serve(3000);
-// Graceful shutdown is automatically configured with:
-// - 10-second timeout for pending requests
-// - Automatic rejection of new requests during shutdown
-// - Clean connection closure
-```
-
-**Features:**
-
-- Stops accepting new connections on shutdown signal
-- Waits for active requests to complete (up to 10s)
-- Returns 503 status for requests received during shutdown
-- Tracks active request count
-- Force exits after timeout to prevent hanging
-
-**Production Deployment:**
-
-The graceful shutdown handler integrates seamlessly with:
-
-- Docker containers (SIGTERM handling)
-- Kubernetes pods (graceful termination)
-- PM2 and other process managers
-- Cloud platform deployment hooks
-
----
-
-## 🧪 Testing
-
-Reiatsu uses [Vitest](https://vitest.dev/) for testing. The framework includes comprehensive tests for core functionality.
+### Environment Variables
 
 ```bash
-# Run tests
-npm test
-
-# Run tests with coverage
-npm test -- --coverage
+NODE_ENV=production
+PORT=3000
+JWT_SECRET=your-secret-key
+ALLOWED_ORIGINS=https://app.com,https://api.app.com
 ```
 
-**Test Structure:**
+## All Exports
 
 ```typescript
-import { describe, it, expect } from "vitest";
-import { signJWT, decodeJWT } from "reiatsu";
+// Core
+export { serve, setupGracefulShutdown, router, use, compose, Context };
 
-describe("JWT Authentication", () => {
-  it("should generate and verify tokens", () => {
-    const payload = { id: "123", email: "user@example.com" };
-    const token = signJWT(payload, "secret", "1h");
-    const decoded = decodeJWT(token, "secret");
-    expect(decoded.id).toBe("123");
-  });
-});
-```
-
----
-
-## 📦 Exports Reference
-
-### Core Exports
-
-```typescript
-import {
-  // Server & Router
-  serve, // Start the HTTP server
-  router, // Router instance
-  use, // Add global middleware
-
-  // Context
-  Context, // Base context class
-
-  // Types
-  Handler, // Route handler type
-  Middleware, // Middleware type
-} from "reiatsu";
-```
-
-### Middleware Exports
-
-```typescript
-import {
-  // Authentication & Security
-  authMiddleware,
-  createSecurityHeadersMiddleware,
-
-  // Request Processing
+// Middleware
+export {
   bodyParserMiddleware,
-  createRequestSizeLimiter,
-  createTimeoutMiddleware,
-
-  // Logging & Monitoring
+  errorHandlerMiddleware,
+  notFoundMiddleware,
+  authMiddleware,
+  createCorsMiddleware,
+  corsPresets,
+  createRateLimiter,
   createLoggerMiddleware,
   devLoggerMiddleware,
   createRequestIdMiddleware,
-
-  // CORS & Cache
-  corsPresets,
-  createCorsMiddleware,
+  createRequestSizeLimiter,
+  createTimeoutMiddleware,
+  securityHeadersMiddleware,
+  createSecurityHeadersMiddleware,
+  csrfMiddleware,
+  createCSRFMiddleware,
+  createCompressionMiddleware,
   cache,
-
-  // File Handling
   serveStatic,
   uploadMiddleware,
   downloadHelperMiddleware,
+};
 
-  // Error Handling
-  errorHandlerMiddleware,
-  notFoundMiddleware,
-
-  // Rate Limiting
-  createRateLimiter,
-} from "reiatsu";
-```
-
-### Utility Exports
-
-```typescript
-import {
-  // Authentication
-  signJWT,
-  decodeJWT,
-
-  // Validation
-  BaseValidator,
+// Security & Validation
+export {
+  escapeHtml,
+  sanitizeFilename,
+  sanitizeUrl,
+  stripHtml,
   StringValidator,
   NumberValidator,
   ObjectValidator,
   ArrayValidator,
-  ValidationResult,
-  ValidationError,
+};
 
-  // Error Classes
+// Authentication
+export { signJWT, decodeJWT };
+
+// Error Classes
+export {
   AppError,
+  NotFoundError,
   AuthenticationError,
   AuthorizationError,
-  NotFoundError,
   ConflictError,
   RateLimitError,
   InternalServerError,
+};
 
-  // Helper Functions
-  asyncHandler,
-  bufferRequest,
-  parseCookie,
-
-  // File Operations
-  saveFileToDisk,
-  parseMultipartFormData,
-} from "reiatsu";
+// Types
+export type {
+  Handler,
+  Middleware,
+  CompressionOptions,
+  CSRFOptions,
+  SecurityHeadersOptions,
+};
 ```
 
-### Type Examples
+## License
 
-```typescript
-// Route Handler Type: Automatically infers params from route path
-type Handler<Path extends string> = (
-  ctx: Context<ExtractRouteParams<Path>>
-) => Promise<void> | void;
-
-// Middleware Type: Can extend Context for custom properties
-type Middleware<Ctx extends Context = Context> = (
-  ctx: Ctx,
-  next: () => Promise<void> | void
-) => Promise<void> | void;
-
-// Cookie Options Type
-interface CookieOptions {
-  maxAge?: number;
-  domain?: string;
-  path?: string;
-  secure?: boolean;
-  httpOnly?: boolean;
-  sameSite?: "Strict" | "Lax" | "None";
-}
-
-// CORS Configuration
-interface CorsOptions {
-  origin?: string | string[] | boolean;
-  methods?: string[];
-  allowedHeaders?: string[];
-  exposedHeaders?: string[];
-  credentials?: boolean;
-  maxAge?: number;
-}
-```
+[MIT License](./LICENSE) - Built with ❤️ using pure Node.js (zero dependencies!)
 
 ---
 
-## 🏗️ Production Deployment
-
-Reiatsu is production-ready with comprehensive environment configuration:
-
-```bash
-# Required environment variables
-NODE_ENV=production        # Enables production optimizations
-PORT=3000                 # Server port
-JWT_SECRET=your-secret    # JWT signing key
-
-# Optional configuration
-ALLOWED_ORIGINS=https://myapp.com,https://api.myapp.com
-LOG_LEVEL=info           # Logging verbosity
-TRUST_PROXY=true        # Trust X-Forwarded-* headers
-MAX_REQUEST_SIZE=5mb    # Request size limit
-REQUEST_TIMEOUT=30000   # Request timeout in ms
-RATE_LIMIT=100         # Requests per minute per IP
-```
-
-Production best practices:
-
-- Set appropriate CORS origins
-- Enable rate limiting
-- Configure security headers
-- Set up request size limits
-- Enable request timeouts
-- Use TLS in production
-- Configure logging appropriately
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please fork, create a feature branch, write tests, and submit a pull request.
-
----
-
-## 📄 License
-
-MIT License. Built with ❤️ using pure Node.js and TypeScript.
+**Made for developers who value simplicity, type safety, and zero bloat.**

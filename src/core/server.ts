@@ -6,8 +6,14 @@ import { handleRequest } from "./router";
  * All incoming requests are delegated to the custom `handleRequest` router.
  *
  * @param port - The port number on which the server should listen.
+ * @param options - Optional configuration including cleanup callback
  */
-export function serve(port: number) {
+export function serve(
+  port: number,
+  options?: {
+    onShutdown?: () => Promise<void>;
+  }
+) {
   const server = http.createServer((req, res) => {
     handleRequest(req, res).catch((err) => {
       console.error("Unhandled error:", err);
@@ -20,7 +26,10 @@ export function serve(port: number) {
   });
 
   // Always-on, 10s forced shutdown timeout
-  setupGracefulShutdown(server, { timeoutMs: 10000 });
+  setupGracefulShutdown(server, {
+    timeoutMs: 10000,
+    onShutdown: options?.onShutdown,
+  });
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
@@ -35,11 +44,13 @@ export function serve(port: number) {
  * @param server - The HTTP server instance to manage.
  * @param opts - Optional configuration for shutdown behavior.
  * @param opts.timeoutMs - Maximum time in milliseconds to wait for active requests before forcing shutdown (default: 10000ms).
+ * @param opts.onShutdown - Optional cleanup callback to run before shutdown (e.g., close database connections, clear caches)
  */
 export function setupGracefulShutdown(
   server: Server,
   opts: {
     timeoutMs?: number;
+    onShutdown?: () => Promise<void>;
   } = {}
 ) {
   let activeRequests = 0;
@@ -57,9 +68,19 @@ export function setupGracefulShutdown(
     res.on("finish", () => activeRequests--);
   });
 
-  const shutdown = () => {
+  const shutdown = async () => {
     if (shuttingDown) return;
     shuttingDown = true;
+
+    if (opts.onShutdown) {
+      try {
+        console.log("Running shutdown cleanup...");
+        await opts.onShutdown();
+      } catch (err) {
+        console.error("Cleanup error:", err);
+      }
+    }
+
     server.close(() => {
       if (activeRequests === 0) process.exit(0);
     });

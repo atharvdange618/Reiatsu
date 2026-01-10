@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { resolve, dirname } from "path";
+import { resolve, dirname, normalize, sep } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -107,12 +107,13 @@ export function render(template: string, data: Record<string, any>): string {
  * @param {string} filePath - The path to the template file.
  * @param {Record<string, any>} data - The data to inject into the template.
  * @returns {string} The rendered string.
+ * @throws {Error} If path traversal is detected
  */
 export function renderFile(filePath: string, data: Record<string, any>) {
-  const fullPath = resolve(VIEWS_PATH, filePath);
+  const fullPath = resolve(VIEWS_PATH, normalize(filePath));
 
-  if (!fullPath.startsWith(VIEWS_PATH)) {
-    throw new Error("Attempted to access template outside views directory");
+  if (!fullPath.startsWith(VIEWS_PATH + sep)) {
+    throw new Error("Path traversal attempt blocked");
   }
 
   const template = readFileSync(fullPath, "utf8");

@@ -165,7 +165,7 @@ import { compose } from "reiatsu";
 const authStack = compose(
   requestIdMiddleware,
   loggerMiddleware,
-  authMiddleware("secret")
+  authMiddleware("secret"),
 );
 
 const apiStack = compose(corsMiddleware, createRateLimiter(100), authStack);
@@ -268,7 +268,7 @@ use(
     threshold: 1024, // Min size to compress (bytes)
     level: 6, // Compression level (0-9)
     preferBrotli: true, // Use Brotli when available
-  })
+  }),
 );
 // 15-20% better compression with Brotli!
 ```
@@ -363,7 +363,7 @@ router.post("/login", async (ctx) => {
   const token = signJWT(
     { id: user.id, email: user.email },
     process.env.JWT_SECRET!,
-    "24h"
+    "24h",
   );
   ctx.json({ token });
 });
@@ -439,7 +439,7 @@ use(
   createCorsMiddleware({
     origin: process.env.ALLOWED_ORIGINS?.split(","),
     credentials: true,
-  })
+  }),
 );
 
 // 3. Performance
@@ -451,13 +451,13 @@ use(bodyParserMiddleware);
 use(
   createLoggerMiddleware({
     colorize: process.env.NODE_ENV !== "production",
-  })
+  }),
 );
 
 // 5. Routes
 const authStack = compose(
   authMiddleware(process.env.JWT_SECRET!),
-  createRateLimiter(20, 60 * 1000)
+  createRateLimiter(20, 60 * 1000),
 );
 
 router.get("/", (ctx) => ctx.json({ status: "ok" }));
